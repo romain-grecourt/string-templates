@@ -8,6 +8,14 @@ public class VNode {
         this.html = html;
     }
 
+    VNode(VNode... nodes) {
+        StringBuilder sb = new StringBuilder();
+        for (VNode node : nodes) {
+            sb.append(node.html);
+        }
+        this.html = sb.toString();
+    }
+
     @Override
     public String toString() {
         return html;

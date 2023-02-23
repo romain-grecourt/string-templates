@@ -9,5 +9,6 @@
 ## Run
 
 ```bash
-mvn package
+mvn clean package
+java --enable-preview -jar impl/target/string-templates-impl.jar 
 ```
