@@ -20,4 +20,8 @@ public class VNode {
     public String toString() {
         return html;
     }
+
+    public static VNode h(String str, Object... model) {
+        return null;
+    }
 }

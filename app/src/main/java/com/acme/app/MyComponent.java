@@ -1,6 +1,8 @@
-package com.acme.impl;
+package com.acme.app;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
 import com.acme.api.VNode;
 
 import static com.acme.api.VNodeProcessor.HTML;

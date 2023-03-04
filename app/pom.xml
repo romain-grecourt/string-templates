@@ -8,11 +8,11 @@
         <artifactId>string-templates-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>string-templates-impl</artifactId>
-    <name>String Templates Impl</name>
+    <artifactId>string-templates-app</artifactId>
+    <name>String Templates App</name>
 
     <properties>
-        <mainClass>com.acme.impl.Main</mainClass>
+        <mainClass>com.acme.app.Main</mainClass>
     </properties>
 
     <dependencies>
