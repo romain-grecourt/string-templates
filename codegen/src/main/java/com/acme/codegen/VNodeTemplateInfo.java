@@ -36,13 +36,8 @@ record VNodeTemplateInfo(String literal, CharSequence name, List<VNodeTemplateAr
         CharSequence name = null;
         while (element != null && name == null) {
             switch (element.getKind()) {
-                case CLASS:
-                case INTERFACE:
-                case RECORD:
-                    name = element.getSimpleName();
-                    break;
-                default:
-                    element = element.getEnclosingElement();
+                case CLASS, INTERFACE, RECORD -> name = element.getSimpleName();
+                default -> element = element.getEnclosingElement();
             }
         }
         return new VNodeTemplateInfo(template, name, args);

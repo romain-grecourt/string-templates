@@ -5,6 +5,7 @@ import java.util.Map;
 /**
  * DOM Reader.
  */
+@SuppressWarnings("unused")
 public interface DomReader {
 
     /**

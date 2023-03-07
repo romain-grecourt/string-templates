@@ -127,12 +127,12 @@ public final class DomParser {
         } else if (hasToken(MARKUP_END)) {
             String name = nameBuilder.toString();
             if (stack.isEmpty()) {
-                throw new IllegalStateException(String.format(
+                throw new DomParserException(String.format(
                         "Missing opening element: %s", name));
             }
             String parentName = stack.pop();
             if (!name.equals(parentName)) {
-                throw new IllegalStateException(String.format(
+                throw new DomParserException(String.format(
                         "Invalid closing element: %s, expecting: %s, line: %d, char: %d",
                         name, parentName, lineNo, charNo));
             }
@@ -188,7 +188,7 @@ public final class DomParser {
             position++;
             state = STATE.DOUBLE_QUOTED_VALUE;
         } else {
-            throw new IllegalStateException(String.format(
+            throw new DomParserException(String.format(
                     "Invalid state, line: %d, char: %d", lineNo, charNo));
         }
     }
@@ -256,7 +256,7 @@ public final class DomParser {
                     case DOUBLE_QUOTED_VALUE -> processQuoteValue(DOUBLE_QUOTE);
                     case TEXT -> processText();
                     case COMMENT -> processComment();
-                    default -> throw new IllegalStateException(String.format(
+                    default -> throw new DomParserException(String.format(
                             "Unknown state: %s, line: %d, char: %d", state, lineNo, charNo));
                 }
                 charNo += (position - lastPosition);
@@ -264,24 +264,24 @@ public final class DomParser {
         }
         if (reader.keepParsing()) {
             if (!stack.isEmpty()) {
-                throw new IllegalStateException(String.format("Unclosed element: %s", stack.peek()));
+                throw new DomParserException(String.format("Unclosed element: %s", stack.peek()));
             }
             if (state != STATE.ELEMENT) {
-                throw new IllegalStateException(String.format("Invalid state: %s", state));
+                throw new DomParserException(String.format("Invalid state: %s", state));
             }
         }
     }
 
     private void validateAttrValueChar(char c) {
         if (c == MARKUP_START || c == MARKUP_END) {
-            throw new IllegalStateException(String.format(
+            throw new DomParserException(String.format(
                     "Invalid character found in value: '%c', line: %d, char: %d", c, lineNo, charNo));
         }
     }
 
     private void validateNameChar(char c, boolean firstChar) {
         if (firstChar && !(Character.isLetter(c) || c == '_') || !isAllowedChar(c)) {
-            throw new IllegalStateException(String.format(
+            throw new DomParserException(String.format(
                     "Invalid character found in name: '%c', line: %d, char: %d", c, lineNo, charNo));
         }
     }
