@@ -16,12 +16,14 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.sun.source.tree.Tree;
 
@@ -29,7 +31,7 @@ import com.sun.source.tree.Tree;
  * Generic annotation processors that scan usages of {@code com.acme.api.vdom.VNodeCompiler.h}.
  */
 @SupportedAnnotationTypes(value = {"*"})
-@SupportedSourceVersion(SourceVersion.RELEASE_20)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class VNodeCompilerAP extends AbstractProcessor {
 
     private static final String SERVICE_FILE = "META-INF/services/com.acme.api.vdom.VNodeTemplateProvider";
@@ -64,9 +66,8 @@ public class VNodeCompilerAP extends AbstractProcessor {
             for (Entry<Element, List<VNodeTemplateInfo>> entry : allTemplateInfos.entrySet()) {
                 Element element = entry.getKey();
                 List<VNodeTemplateInfo> templateInfos = entry.getValue();
-                for (int i = 0; i < templateInfos.size(); i++) {
-                    VNodeTemplateInfo templateInfo = templateInfos.get(i);
-                    String name = generateTemplateImpl(element, templateInfo, i + 1);
+                for (VNodeTemplateInfo templateInfo : templateInfos) {
+                    String name = generateTemplateImpl(element, templateInfo);
                     packages.computeIfAbsent(templateInfo.pkg(), pkg -> new HashMap<>()).put(name, templateInfo);
                 }
             }
@@ -90,23 +91,24 @@ public class VNodeCompilerAP extends AbstractProcessor {
         return false;
     }
 
-    private String generateTemplateImpl(Element element,
-                                        VNodeTemplateInfo template,
-                                        int index) throws IOException {
-
+    private String generateTemplateImpl(Element element, VNodeTemplateInfo template) throws IOException {
         Filer filer = processingEnv.getFiler();
         String pkg = template.pkg();
-        String className = (template.name() == null ? "T" : template.name()) + String.valueOf(index);
+        String className = template.simpleName();
         String qName = pkg + "." + className;
         JavaFileObject fileObject = filer.createSourceFile(qName, element);
 
         // gather all imports first.
-        Set<CharSequence> imports = new HashSet<>();
+        List<String> imports = new ArrayList<>();
         imports.add("com.acme.api.vdom.VNode");
         imports.add("com.acme.api.vdom.VNodeTemplate");
         for (VNodeTemplateArgInfo arg : template.args()) {
-            imports.add(arg.type().getQualifiedName());
+            Name typeQName = arg.type().getQualifiedName();
+            if (!imports.contains(typeQName)) {
+                imports.add(typeQName.toString());
+            }
         }
+        Collections.sort(imports);
 
         List<VNodeTemplateArgInfo> args = template.args();
         try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
@@ -117,7 +119,16 @@ public class VNodeCompilerAP extends AbstractProcessor {
             }
             bw.append("\n")
               .append("\n/**")
-              .append("\n * Generated template implementation.")
+              .append("\n * ").append(String.format("{@link VNodeTemplate} implementation for {@link %s} at position {@code %d}.",
+                      template.enclosingClassName(), template.position()))
+              .append("\n * <br/>")
+              .append("\n * <pre>");
+            for (String line : template.literal().lines().toList()) {
+                bw.append("\n * ")
+                  .append(line.replace("<", "&lt;")
+                              .replace(">", "&gt;"));
+            }
+            bw.append("\n * </pre>")
               .append("\n */")
               .append("\nclass ").append(className).append(" implements VNodeTemplate {")
               .append("\n")

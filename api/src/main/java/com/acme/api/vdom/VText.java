@@ -1,12 +1,24 @@
 package com.acme.api.vdom;
 
-public class VText implements VNode {
+/**
+ * Text {@link VNode}.
+ */
+public final class VText implements VNode {
+
     private String text;
 
+    private VText(String text) {
+        this.text = text;
+    }
+
+    /**
+     * Create a new instance.
+     *
+     * @param text text
+     * @return VText
+     */
     public static VText create(String text) {
-        VText node = new VText();
-        node.text = text;
-        return node;
+        return new VText(text);
     }
 
     public String getText() {

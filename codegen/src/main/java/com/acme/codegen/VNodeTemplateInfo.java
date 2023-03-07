@@ -9,12 +9,26 @@ import com.sun.source.tree.MethodInvocationTree;
 /**
  * Template info.
  *
- * @param literal template literal
- * @param args    template arguments
- * @param pkg     name package name
- * @param name    name enclosing class name
+ * @param literal            template literal
+ * @param args               template arguments
+ * @param pkg                name package name
+ * @param enclosingClassName enclosing class name
+ * @param position           start position
  */
-record VNodeTemplateInfo(String literal, List<VNodeTemplateArgInfo> args, String pkg, CharSequence name) {
+record VNodeTemplateInfo(String literal,
+                         List<VNodeTemplateArgInfo> args,
+                         String pkg,
+                         CharSequence enclosingClassName,
+                         long position) {
+
+    /**
+     * Get the simple name.
+     *
+     * @return name
+     */
+    String simpleName() {
+        return enclosingClassName + "_" + position;
+    }
 
     /**
      * Create a new template info.
@@ -31,7 +45,8 @@ record VNodeTemplateInfo(String literal, List<VNodeTemplateArgInfo> args, String
                                                    .map(e -> VNodeTemplateArgInfo.create(e, env))
                                                    .collect(Collectors.toList());
         String pkg = env.unit().getPackageName().toString();
-        CharSequence name = env.scope(node).getEnclosingClass().getSimpleName();
-        return new VNodeTemplateInfo(literal, args, pkg, name);
+        CharSequence className = env.scope(node).getEnclosingClass().getSimpleName();
+        long position = env.startPosition(node);
+        return new VNodeTemplateInfo(literal, args, pkg, className, position);
     }
 }

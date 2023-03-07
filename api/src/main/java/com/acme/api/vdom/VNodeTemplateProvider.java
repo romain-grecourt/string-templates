@@ -9,7 +9,6 @@ import java.util.function.Supplier;
 /**
  * {@link VNodeTemplate} service provider.
  */
-@SuppressWarnings("unused")
 public class VNodeTemplateProvider {
 
     private static final Map<Integer, VNodeTemplate> ALL_TEMPLATES = new IdentityHashMap<>();

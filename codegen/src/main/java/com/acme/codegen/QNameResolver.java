@@ -18,12 +18,12 @@ final class QNameResolver extends TreeScanner<String, Env> {
         while (scope.getEnclosingScope() != null) {
             for (Element elt : scope.getLocalElements()) {
                 if (elt.getSimpleName() == node.getName()) {
-                    String name = node.getName().toString();
+                    CharSequence name = node.getName();
                     Element enclosing = elt.getEnclosingElement();
                     if (enclosing instanceof QualifiedNameable) {
                         return ((QualifiedNameable) enclosing).getQualifiedName() + "." + name;
                     }
-                    return name;
+                    return name.toString();
                 }
             }
             scope = scope.getEnclosingScope();

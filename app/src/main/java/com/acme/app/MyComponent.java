@@ -14,8 +14,10 @@ public class MyComponent extends Component {
     @Override
     public VNode render() {
         return h("""
-                <ul :for={{ var name : names }}>
-                   <li>{{ name }}</li>
+                <ul>
+                   <li :for={{ var name : names }}>
+                       <span>{{ name }</span>
+                   </li>
                 </ul>
                 """, names);
     }

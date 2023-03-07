@@ -1,14 +1,14 @@
 package com.acme.codegen;
 
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.Scope;
-import com.sun.source.tree.Tree;
-import com.sun.source.util.Trees;
-
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Types;
+
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.Scope;
+import com.sun.source.tree.Tree;
+import com.sun.source.util.Trees;
 
 /**
  * A utility to bridge between {@link Element} and {@link Tree}.
@@ -57,6 +57,16 @@ record Env(Types types, Trees trees, ZTreeMaker treeMaker, CompilationUnitTree u
      */
     TypeElement type(Element element) {
         return (TypeElement) types.asElement(element.asType());
+    }
+
+    /**
+     * Get the start position for the given tree node.
+     *
+     * @param node tree node
+     * @return position
+     */
+    long startPosition(Tree node) {
+        return trees.getSourcePositions().getStartPosition(unit, node);
     }
 
     /**
