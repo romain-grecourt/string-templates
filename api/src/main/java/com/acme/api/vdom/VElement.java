@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class VElement extends VNode {
+public class VElement implements VNode {
 
     private String tag;
     private Map<String, String> attributes = new HashMap<>();

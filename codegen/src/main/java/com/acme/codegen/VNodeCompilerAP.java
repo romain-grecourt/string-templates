@@ -2,9 +2,10 @@ package com.acme.codegen;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
@@ -17,32 +18,22 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
-import com.sun.source.util.TreePath;
-import com.sun.source.util.Trees;
 
 /**
  * Generic annotation processors that scan usages of {@code com.acme.api.vdom.VNodeCompiler.h}.
  */
 @SupportedAnnotationTypes(value = {"*"})
+@SupportedSourceVersion(SourceVersion.RELEASE_20)
 public class VNodeCompilerAP extends AbstractProcessor {
 
     private static final String SERVICE_FILE = "META-INF/services/com.acme.api.vdom.VNodeTemplateProvider";
-    private Trees trees;
     private boolean done;
-
-    @Override
-    public synchronized void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        trees = Trees.instance(processingEnv);
-    }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -53,11 +44,9 @@ public class VNodeCompilerAP extends AbstractProcessor {
 
         // scan for templates
         for (Element rootElt : roundEnv.getRootElements()) {
-            TreePath path = trees.getPath(rootElt);
-            Tree node = path.getLeaf();
-            CompilationUnitTree unit = path.getCompilationUnit();
-            Lookup lookup = new Lookup(processingEnv.getTypeUtils(), trees, unit);
-            List<VNodeTemplateInfo> scanned = node.accept(new VNodeTemplateScanner(), lookup);
+            Env env = Env.create(processingEnv, rootElt);
+            Tree node = env.tree(rootElt);
+            List<VNodeTemplateInfo> scanned = node.accept(new VNodeTemplateScanner(), env);
             if (scanned != null && !scanned.isEmpty()) {
                 allTemplateInfos.computeIfAbsent(rootElt, e -> new ArrayList<>()).addAll(scanned);
             }
@@ -75,12 +64,10 @@ public class VNodeCompilerAP extends AbstractProcessor {
             for (Entry<Element, List<VNodeTemplateInfo>> entry : allTemplateInfos.entrySet()) {
                 Element element = entry.getKey();
                 List<VNodeTemplateInfo> templateInfos = entry.getValue();
-                String pkg = packageName(element);
-                Map<String, VNodeTemplateInfo> templateClasses = packages.computeIfAbsent(pkg, p -> new HashMap<>());
                 for (int i = 0; i < templateInfos.size(); i++) {
                     VNodeTemplateInfo templateInfo = templateInfos.get(i);
-                    String name = generateTemplateImpl(element, templateInfo, i + 1, pkg);
-                    templateClasses.put(name, templateInfo);
+                    String name = generateTemplateImpl(element, templateInfo, i + 1);
+                    packages.computeIfAbsent(templateInfo.pkg(), pkg -> new HashMap<>()).put(name, templateInfo);
                 }
             }
 
@@ -105,10 +92,10 @@ public class VNodeCompilerAP extends AbstractProcessor {
 
     private String generateTemplateImpl(Element element,
                                         VNodeTemplateInfo template,
-                                        int index,
-                                        String pkg) throws IOException {
+                                        int index) throws IOException {
 
         Filer filer = processingEnv.getFiler();
+        String pkg = template.pkg();
         String className = (template.name() == null ? "T" : template.name()) + String.valueOf(index);
         String qName = pkg + "." + className;
         JavaFileObject fileObject = filer.createSourceFile(qName, element);
@@ -141,15 +128,14 @@ public class VNodeCompilerAP extends AbstractProcessor {
                 Name argType = argInfo.type().getSimpleName();
                 bw.append("\n        ")
                   .append(argType).append(" ").append(argInfo.name())
-                  .append(" = (").append(argType).append(") ").append("args[").append(String.valueOf(i)).append("];");
-                // TODO use DomParser and generate the actual code..
-                bw.append("\n        return null;");
+                  .append(" = (").append(argType).append(") ").append("args[").append(String.valueOf(i)).append("];")
+                  .append("\n        return null;");
             }
             bw.append("\n    }")
               .append("\n}")
               .append("\n");
         }
-        return qName;
+        return className;
     }
 
     private String generateProviderImpl(Map<String, VNodeTemplateInfo> templates, String pkg) throws IOException {
@@ -160,36 +146,23 @@ public class VNodeCompilerAP extends AbstractProcessor {
         try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
             bw.append("package ").append(pkg).append(";")
               .append("\n")
-              .append("\nimport com.acme.api.VNodeTemplateProvider;")
-              .append("\nimport com.acme.api.VNodeTemplate;")
+              .append("\nimport com.acme.api.vdom.VNodeTemplateProvider;")
+              .append("\nimport com.acme.api.vdom.VNodeTemplate;")
               .append("\n")
               .append("\n/**")
               .append("\n * Template provider implementation for package {@code ").append(pkg).append("}.")
               .append("\n */")
               .append("\npublic class ").append(className).append(" extends VNodeTemplateProvider {")
               .append("\n")
-              .append("\n    private static final Object[] IDS = new Object[]{");
-            Set<Entry<String, VNodeTemplateInfo>> entries = templates.entrySet();
-            for (int i = 0; i < entries.size(); i++) {
-                Iterator<Entry<String, VNodeTemplateInfo>> it = entries.iterator();
-                Entry<String, VNodeTemplateInfo> entry = it.next();
-                VNodeTemplateInfo template = entry.getValue();
-                bw.append("\n        \"")
-                  .append(escape(template.literal()))
-                  .append("\"");
-                if (it.hasNext()) {
-                    bw.append(",");
-                }
-            }
-            bw.append("\n    };")
-              .append("\n")
               .append("\n    /**")
               .append("\n     * Create a new instance.")
               .append("\n     */")
               .append("\n    public ").append(className).append("() {");
-            for (int i = 0; i < templates.size(); i++) {
-                String ref = "IDS[" + i + "]";
-                bw.append(String.format("\n        register(%s, () -> null);", ref));
+            Set<Entry<String, VNodeTemplateInfo>> entries = templates.entrySet();
+            for (Entry<String, VNodeTemplateInfo> entry : entries) {
+                int id = entry.getValue().literal().hashCode();
+                String templateClassName = entry.getKey();
+                bw.append(String.format("\n        register(%s, %s::new);", id, templateClassName));
             }
             bw.append("\n    }")
               .append("\n}")
@@ -206,20 +179,5 @@ public class VNodeCompilerAP extends AbstractProcessor {
                 bw.append(provider).append("\n");
             }
         }
-    }
-
-    private String packageName(Element element) {
-        TreePath path = trees.getPath(element);
-        CompilationUnitTree unit = path.getCompilationUnit();
-        return unit.getPackageName().toString();
-    }
-
-    private static String escape(String str) {
-        return str.replace("\\", "\\\\")
-                  .replace("\n", "\\n")
-                  .replace("\b", "\\b")
-                  .replace("\t", "\\t")
-                  .replace("\r", "\\r")
-                  .replace("\"", "\\");
     }
 }

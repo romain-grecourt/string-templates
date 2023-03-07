@@ -8,12 +8,12 @@ import com.sun.source.tree.Scope;
 import com.sun.source.util.TreeScanner;
 
 /**
- * Tree scanner that resolved the fully qualified named of an {@link IdentifierTree} node.
+ * Tree scanner that resolves the fully qualified named of an {@link IdentifierTree} node.
  */
-final class QNameResolver extends TreeScanner<String, Lookup> {
+final class QNameResolver extends TreeScanner<String, Env> {
 
     @Override
-    public String visitIdentifier(IdentifierTree node, Lookup scopeLookup) {
+    public String visitIdentifier(IdentifierTree node, Env scopeLookup) {
         Scope scope = scopeLookup.scope(node);
         while (scope.getEnclosingScope() != null) {
             for (Element elt : scope.getLocalElements()) {

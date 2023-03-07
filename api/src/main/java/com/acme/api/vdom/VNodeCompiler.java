@@ -10,21 +10,18 @@ public final class VNodeCompiler {
     }
 
     /**
-     * VNode template compiler entrypoint.
-     * <ul>
-     *     <li>At compile-time, the {@code id} parameter must be a string literal. The string content is parsed
-     *     and a class implementing {@link VNodeTemplate} is generated.</li>
-     *     <li>At run-time, the {@code id} parameter is used to match the generated  {@link VNodeTemplate} class.</li>
-     * </ul>
-     * <br/>
-     * Note that the id string may be replaced post-compilation with an object in order to reduce the byte-code size,
-     * hence the {@link Object} type.
+     * Get a reference to a code-generated {@link VNodeTemplate} instance.
+     * At compile-time, usages of this method are scanned {@link VNodeTemplate} implementations are code-generated
+     * from the template text literals.
+     * <p>
+     * Note that the id parameter <b>MUST BE A LITERAL</b> in the source code, however it may be translated during
+     * post-compilation to reduce the final byte-code size.
      *
-     * @param id   object whose reference is used as identity
+     * @param id   template text, <b>MUST BE A LITERAL</b>
      * @param args args template arguments
      * @return VNode
      */
     public static VNode h(Object id, Object... args) {
-        return VNodeTemplateProvider.get(id).render(args);
+        return new VNodeTemplateRef(id, args);
     }
 }

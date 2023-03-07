@@ -36,6 +36,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <fork>true</fork> <!-- required for the add-opens to work -->
+                    <showWarnings>true</showWarnings>
+                    <release combine.self="override"/>
+                    <compilerArgs>
+                        <!-- enable usage of internal API to enable AST translation -->
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>com.acme</groupId>

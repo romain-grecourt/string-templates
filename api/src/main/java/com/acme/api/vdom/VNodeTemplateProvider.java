@@ -12,15 +12,16 @@ import java.util.function.Supplier;
 @SuppressWarnings("unused")
 public class VNodeTemplateProvider {
 
-    private static final Map<Object, VNodeTemplate> ALL_TEMPLATES = new IdentityHashMap<>();
-    private final Map<Object, Supplier<VNodeTemplate>> suppliers = new IdentityHashMap<>();
+    private static final Map<Integer, VNodeTemplate> ALL_TEMPLATES = new IdentityHashMap<>();
+    private final Map<Integer, Supplier<VNodeTemplate>> suppliers = new IdentityHashMap<>();
 
     /**
      * Register a template supplier.
-     * @param id whose reference is used as identity
+     *
+     * @param id       template id
      * @param supplier supplier of {@link VNodeTemplate}
      */
-    protected void register(Object id, Supplier<VNodeTemplate> supplier) {
+    protected void register(int id, Supplier<VNodeTemplate> supplier) {
         suppliers.put(id, supplier);
     }
 
@@ -31,7 +32,7 @@ public class VNodeTemplateProvider {
      * @return template
      * @throws IllegalArgumentException if the template is not found
      */
-    public static VNodeTemplate get(Object id) {
+    public static VNodeTemplate get(int id) {
         return ALL_TEMPLATES.computeIfAbsent(id, k ->
                 Cache.PROVIDERS.stream()
                                .filter(p -> p.suppliers.containsKey(k))

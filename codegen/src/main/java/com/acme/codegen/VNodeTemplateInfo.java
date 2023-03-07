@@ -6,40 +6,32 @@ import java.util.stream.Collectors;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 
-import javax.lang.model.element.Element;
-
 /**
  * Template info.
  *
  * @param literal template literal
- * @param name    template base name
  * @param args    template arguments
+ * @param pkg     name package name
+ * @param name    name enclosing class name
  */
-record VNodeTemplateInfo(String literal, CharSequence name, List<VNodeTemplateArgInfo> args) {
+record VNodeTemplateInfo(String literal, List<VNodeTemplateArgInfo> args, String pkg, CharSequence name) {
 
     /**
      * Create a new template info.
      *
-     * @param node   tree node
-     * @param lookup lookup
+     * @param node tree node
+     * @param env  env
      * @return template info
      */
-    static VNodeTemplateInfo create(MethodInvocationTree node, Lookup lookup) {
+    static VNodeTemplateInfo create(MethodInvocationTree node, Env env) {
         List<? extends ExpressionTree> arguments = node.getArguments();
-        String template = arguments.get(0).accept(new StringLiteralVisitor(), null);
+        String literal = arguments.get(0).accept(new StringLiteralVisitor(), null);
         List<VNodeTemplateArgInfo> args = arguments.stream()
                                                    .skip(1)
-                                                   .map(e -> VNodeTemplateArgInfo.create(e, lookup))
+                                                   .map(e -> VNodeTemplateArgInfo.create(e, env))
                                                    .collect(Collectors.toList());
-
-        Element element = lookup.element(node);
-        CharSequence name = null;
-        while (element != null && name == null) {
-            switch (element.getKind()) {
-                case CLASS, INTERFACE, RECORD -> name = element.getSimpleName();
-                default -> element = element.getEnclosingElement();
-            }
-        }
-        return new VNodeTemplateInfo(template, name, args);
+        String pkg = env.unit().getPackageName().toString();
+        CharSequence name = env.scope(node).getEnclosingClass().getSimpleName();
+        return new VNodeTemplateInfo(literal, args, pkg, name);
     }
 }

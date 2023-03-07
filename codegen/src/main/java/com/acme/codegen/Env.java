@@ -5,6 +5,7 @@ import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.Trees;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Types;
@@ -16,7 +17,7 @@ import javax.lang.model.util.Types;
  * @param trees trees utility
  * @param unit  compilation unit
  */
-record Lookup(Types types, Trees trees, CompilationUnitTree unit) {
+record Env(Types types, Trees trees, ZTreeMaker treeMaker, CompilationUnitTree unit) {
 
     /**
      * Get the scope for the given tree node.
@@ -26,6 +27,16 @@ record Lookup(Types types, Trees trees, CompilationUnitTree unit) {
      */
     Scope scope(Tree node) {
         return trees.getScope(trees.getPath(unit, node));
+    }
+
+    /**
+     * Get the tree node for the given element.
+     *
+     * @param element element
+     * @return Tree
+     */
+    Tree tree(Element element) {
+        return trees.getPath(element).getLeaf();
     }
 
     /**
@@ -46,5 +57,19 @@ record Lookup(Types types, Trees trees, CompilationUnitTree unit) {
      */
     TypeElement type(Element element) {
         return (TypeElement) types.asElement(element.asType());
+    }
+
+    /**
+     * Create a new env.
+     *
+     * @param processingEnv processing environment
+     * @param elt           element
+     * @return Env
+     */
+    static Env create(ProcessingEnvironment processingEnv, Element elt) {
+        Trees trees = Trees.instance(processingEnv);
+        CompilationUnitTree unit = trees.getPath(elt).getCompilationUnit();
+        ZTreeMaker treeMaker = ZTreeMaker.instance(processingEnv);
+        return new Env(processingEnv.getTypeUtils(), trees, treeMaker, unit);
     }
 }

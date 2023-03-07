@@ -4,5 +4,5 @@
 
 ```bash
 mvn clean package
-java impl/target/string-templates-impl.jar 
+java -jar app/target/string-templates-app.jar
 ```
