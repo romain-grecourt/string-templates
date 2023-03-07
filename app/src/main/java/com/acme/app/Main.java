@@ -1,24 +1,12 @@
 package com.acme.app;
 
-import com.acme.api.VNode;
-
-import java.util.List;
-
-import static com.acme.api.VNode.h;
+import com.acme.api.vdom.VNode;
 
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println(new MyComponent().render());
-    }
-
-    private final List<String> names = List.of("Bob", "Alice");
-
-    VNode render() {
-        return h("""
-                <ul :for={{ names }}>
-                   <li>{{ it.toFooBar() }}</li>"
-                </ul>
-                """, names);
+        VNode root = new MyComponent().render();
+        // TODO traverse root to print
+        System.out.println(root);
     }
 }

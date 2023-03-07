@@ -1,25 +1,22 @@
 package com.acme.app;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-import com.acme.api.VNode;
+import com.acme.api.Component;
+import com.acme.api.vdom.VNode;
 
-import static com.acme.api.VNodeProcessor.HTML;
-import static com.acme.api.VNodeProcessor.forEach;
+import static com.acme.api.vdom.VNodeCompiler.h;
 
-public class MyComponent {
+public class MyComponent extends Component {
 
-    private List<String> names = List.of("Bob", "Alice");
+    private final List<String> names = List.of("Bob", "Alice");
 
+    @Override
     public VNode render() {
-        return HTML."""
-                <ul>
-                \{ 
-                    forEach(names, it -> HTML."""
-                            <li>\{it}</li>
-                        """)
-                }</ul>
-                """;
+        return h("""
+                <ul :for={{ var name : names }}>
+                   <li>{{ name }}</li>
+                </ul>
+                """, names);
     }
 }
