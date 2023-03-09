@@ -7,7 +7,6 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
@@ -16,14 +15,11 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.sun.source.tree.Tree;
 
@@ -97,87 +93,18 @@ public class VNodeCompilerAP extends AbstractProcessor {
         String className = template.simpleName();
         String qName = pkg + "." + className;
         JavaFileObject fileObject = filer.createSourceFile(qName, element);
-
-        // gather all imports first.
-        List<String> imports = new ArrayList<>();
-        imports.add("com.acme.api.vdom.VNode");
-        imports.add("com.acme.api.vdom.VNodeTemplate");
-        for (VNodeTemplateArgInfo arg : template.args()) {
-            Name typeQName = arg.type().getQualifiedName();
-            if (!imports.contains(typeQName)) {
-                imports.add(typeQName.toString());
-            }
-        }
-        Collections.sort(imports);
-
-        List<VNodeTemplateArgInfo> args = template.args();
         try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-            bw.append("package ").append(pkg).append(";")
-              .append("\n");
-            for (CharSequence importQName : imports) {
-                bw.append("\nimport ").append(importQName).append(";");
-            }
-            bw.append("\n")
-              .append("\n/**")
-              .append("\n * ").append(String.format("{@link VNodeTemplate} implementation for {@link %s} at position {@code %d}.",
-                      template.enclosingClassName(), template.position()))
-              .append("\n * <br/>")
-              .append("\n * <pre>");
-            for (String line : template.literal().lines().toList()) {
-                bw.append("\n * ")
-                  .append(line.replace("<", "&lt;")
-                              .replace(">", "&gt;"));
-            }
-            bw.append("\n * </pre>")
-              .append("\n */")
-              .append("\nclass ").append(className).append(" implements VNodeTemplate {")
-              .append("\n")
-              .append("\n    ").append("@Override")
-              .append("\n    ").append("public VNode render(Object... args) {");
-            for (int i = 0; i < args.size(); i++) {
-                VNodeTemplateArgInfo argInfo = args.get(i);
-                Name argType = argInfo.type().getSimpleName();
-                bw.append("\n        ")
-                  .append(argType).append(" ").append(argInfo.name())
-                  .append(" = (").append(argType).append(") ").append("args[").append(String.valueOf(i)).append("];")
-                  .append("\n        return null;");
-            }
-            bw.append("\n    }")
-              .append("\n}")
-              .append("\n");
+            bw.append(VNodeTemplateGenerator.generate(template));
         }
         return className;
     }
 
     private String generateProviderImpl(Map<String, VNodeTemplateInfo> templates, String pkg) throws IOException {
-        String className = "VNodeTemplateProviderImpl";
-        String qName = pkg + "." + className;
+        String qName = pkg + "." + VNodeTemplateProviderGenerator.CNAME;
         Filer filer = processingEnv.getFiler();
         JavaFileObject fileObject = filer.createSourceFile(qName);
         try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-            bw.append("package ").append(pkg).append(";")
-              .append("\n")
-              .append("\nimport com.acme.api.vdom.VNodeTemplateProvider;")
-              .append("\nimport com.acme.api.vdom.VNodeTemplate;")
-              .append("\n")
-              .append("\n/**")
-              .append("\n * Template provider implementation for package {@code ").append(pkg).append("}.")
-              .append("\n */")
-              .append("\npublic class ").append(className).append(" extends VNodeTemplateProvider {")
-              .append("\n")
-              .append("\n    /**")
-              .append("\n     * Create a new instance.")
-              .append("\n     */")
-              .append("\n    public ").append(className).append("() {");
-            Set<Entry<String, VNodeTemplateInfo>> entries = templates.entrySet();
-            for (Entry<String, VNodeTemplateInfo> entry : entries) {
-                int id = entry.getValue().literal().hashCode();
-                String templateClassName = entry.getKey();
-                bw.append(String.format("\n        register(%s, %s::new);", id, templateClassName));
-            }
-            bw.append("\n    }")
-              .append("\n}")
-              .append("\n");
+            bw.append(VNodeTemplateProviderGenerator.generate(templates, pkg));
         }
         return qName;
     }

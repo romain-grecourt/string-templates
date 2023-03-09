@@ -4,7 +4,6 @@ import com.sun.source.tree.ExpressionTree;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
 
 /**
  * Template argument info.
@@ -12,7 +11,7 @@ import javax.lang.model.element.TypeElement;
  * @param type argument type
  * @param name argument name
  */
-record VNodeTemplateArgInfo(TypeElement type, Name name) {
+record VNodeTemplateArgInfo(TypeInfo type, Name name) {
 
     /**
      * Create a new literal argument info.
@@ -23,7 +22,7 @@ record VNodeTemplateArgInfo(TypeElement type, Name name) {
      */
     static VNodeTemplateArgInfo create(ExpressionTree node, Env env) {
         Element element = env.element(node);
-        TypeElement type = env.type(element);
+        TypeInfo type = TypeInfo.of(element, env.types());
         Name name = element.getSimpleName();
         return new VNodeTemplateArgInfo(type, name);
     }

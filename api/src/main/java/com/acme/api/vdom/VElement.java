@@ -87,6 +87,17 @@ public final class VElement implements VNode {
      * @param children supplier of children
      * @return this instance
      */
+    public VElement children(List<VNode> children) {
+        this.children.addAll(children);
+        return this;
+    }
+
+    /**
+     * Add children.
+     *
+     * @param children supplier of children
+     * @return this instance
+     */
     public VElement children(Supplier<List<VNode>> children) {
         this.children.addAll(children.get());
         return this;

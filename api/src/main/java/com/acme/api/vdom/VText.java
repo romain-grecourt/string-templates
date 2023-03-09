@@ -21,6 +21,11 @@ public final class VText implements VNode {
         return new VText(text);
     }
 
+    /**
+     * Get the text.
+     *
+     * @return text
+     */
     public String getText() {
         return text;
     }

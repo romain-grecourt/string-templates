@@ -14,11 +14,18 @@ public class MyComponent extends Component {
     @Override
     public VNode render() {
         return h("""
-                <ul>
-                   <li :for={{ var name : names }}>
-                       <span>{{ name }</span>
-                   </li>
-                </ul>
+                <div>
+                    <h1>Names</h1>
+                    <br/>
+                    <ul class="outlined">
+                       <li
+                         :for={{ var name : names }}
+                         @click={{ this::onClick }}
+                       >
+                           <span>Name: {{ name }}.</span>
+                       </li>
+                    </ul>
+                </div>
                 """, names);
     }
 }

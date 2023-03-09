@@ -23,6 +23,7 @@ public final class DomParser {
         TEXT,
         ATTRIBUTES,
         ATTRIBUTE_VALUE,
+        EXPR_VALUE,
         SINGLE_QUOTED_VALUE,
         DOUBLE_QUOTED_VALUE,
     }
@@ -34,6 +35,8 @@ public final class DomParser {
     private static final char MARKUP_START = '<';
     private static final char MARKUP_END = '>';
     private static final char ATTRIBUTE_VALUE = '=';
+    private static final String EXPR_START = "{{";
+    private static final String EXPR_END = "}}";
     private static final char DOUBLE_QUOTE = '"';
     private static final char SINGLE_QUOTE = '\'';
     private static final char[] ALLOWED_CHARS = new char[]{'_', '.', '-', ':'};
@@ -56,9 +59,19 @@ public final class DomParser {
     private final DomReader reader;
     private final Reader ir;
 
-    DomParser(String is, DomReader reader) {
+    private DomParser(String is, DomReader reader) {
         this.ir = new StringReader(is);
         this.reader = Objects.requireNonNull(reader, "reader is null");
+    }
+
+    /**
+     * Parse the dom in the given string.
+     *
+     * @param is     input sting
+     * @param reader reader
+     */
+    public static void parse(String is, DomReader reader) throws IOException {
+        new DomParser(is, reader).parse();
     }
 
     /**
@@ -178,7 +191,7 @@ public final class DomParser {
         }
     }
 
-    private void processAttributeValue() {
+    private void processAttributeValue() throws IOException {
         if (Character.isWhitespace(c)) {
             position++;
         } else if (hasToken(SINGLE_QUOTE)) {
@@ -187,9 +200,25 @@ public final class DomParser {
         } else if (hasToken(DOUBLE_QUOTE)) {
             position++;
             state = STATE.DOUBLE_QUOTED_VALUE;
+        } else if (hasToken(EXPR_START)) {
+            position += 2;
+            state = STATE.EXPR_VALUE;
         } else {
             throw new DomParserException(String.format(
                     "Invalid state, line: %d, char: %d", lineNo, charNo));
+        }
+    }
+
+    private void processExprValue() throws IOException {
+        if (hasToken(EXPR_END)) {
+            position += 2;
+            state = STATE.ATTRIBUTES;
+            attributes.put(attrNameBuilder.toString(), attrValueBuilder.toString());
+            attrNameBuilder = new StringBuilder();
+            attrValueBuilder = new StringBuilder();
+        } else {
+            position++;
+            attrValueBuilder.append(c);
         }
     }
 
@@ -252,6 +281,7 @@ public final class DomParser {
                     case NAME -> processName();
                     case ATTRIBUTES -> processAttributes();
                     case ATTRIBUTE_VALUE -> processAttributeValue();
+                    case EXPR_VALUE -> processExprValue();
                     case SINGLE_QUOTED_VALUE -> processQuoteValue(SINGLE_QUOTE);
                     case DOUBLE_QUOTED_VALUE -> processQuoteValue(DOUBLE_QUOTE);
                     case TEXT -> processText();
@@ -280,7 +310,7 @@ public final class DomParser {
     }
 
     private void validateNameChar(char c, boolean firstChar) {
-        if (firstChar && !(Character.isLetter(c) || c == '_') || !isAllowedChar(c)) {
+        if (!((firstChar && (c == ':' || c == '@')) || isAllowedChar(c))) {
             throw new DomParserException(String.format(
                     "Invalid character found in name: '%c', line: %d, char: %d", c, lineNo, charNo));
         }

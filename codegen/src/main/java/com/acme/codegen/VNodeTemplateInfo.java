@@ -31,6 +31,28 @@ record VNodeTemplateInfo(String literal,
     }
 
     /**
+     * Get the list of required type names.
+     *
+     * @return list of String
+     */
+    List<String> requiredTypeNames() {
+        return requiredTypes().stream()
+                              .map(TypeInfo::qualifiedName)
+                              .collect(Collectors.toList());
+    }
+
+    /**
+     * Get the list of required types.
+     *
+     * @return list of TypeInfo
+     */
+    List<TypeInfo> requiredTypes() {
+        return args().stream()
+                     .flatMap(a -> a.type().allTypeParams().stream())
+                     .collect(Collectors.toList());
+    }
+
+    /**
      * Create a new template info.
      *
      * @param node tree node
