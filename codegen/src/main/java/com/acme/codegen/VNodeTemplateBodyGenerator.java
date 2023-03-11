@@ -1,18 +1,19 @@
 package com.acme.codegen;
 
-import com.acme.codegen.dom.DomElement;
-import com.acme.codegen.dom.DomParser;
-import com.acme.codegen.dom.DomReader;
-import com.acme.codegen.utils.Maps;
-import com.acme.codegen.utils.Pair;
-import com.acme.codegen.utils.Strings;
-
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+
+import com.acme.codegen.dom.DomElement;
+import com.acme.codegen.dom.DomParser;
+import com.acme.codegen.dom.DomReader;
+import com.acme.codegen.utils.Maps;
+import com.acme.codegen.utils.Pair;
+import com.acme.codegen.utils.Strings;
 
 import static com.acme.codegen.utils.Constants.CTRL_KEYS;
 import static com.acme.codegen.utils.Constants.ELSE_KEY;
@@ -29,19 +30,25 @@ final class VNodeTemplateBodyGenerator implements DomReader {
 
     private final Deque<DomElement> desc = new ArrayDeque<>();
     private final Deque<Pair<DomElement, String>> asc = new ArrayDeque<>();
+    private DomParser parser;
+
+    private void read(String is) throws IOException {
+        parser = new DomParser(is, this);
+        parser.parse();
+    }
 
     /**
      * Generate the body of {@code VNodeTemplate.render}.
      *
-     * @param template raw template
+     * @param is input string
      * @return code
      * @throws IOException if an IO error occurs
      */
-    static String generate(String template) throws IOException {
+    static String generate(String is) throws IOException {
         VNodeTemplateBodyGenerator reader = new VNodeTemplateBodyGenerator();
-        DomParser.parse(template, reader);
+        reader.read(is);
         Pair<DomElement, String> result = reader.asc.pop();
-        return result.second().lines().collect(joining("\n"));
+        return result.second();
     }
 
     @Override
@@ -49,7 +56,7 @@ final class VNodeTemplateBodyGenerator implements DomReader {
         if (desc.isEmpty() && Maps.containsKeys(attrs, CTRL_KEYS)) {
             throw new IllegalStateException("Root element cannot use control attributes");
         }
-        desc.push(new DomElement(desc.peek(), name, attrs));
+        desc.push(new DomElement(desc.peek(), name, attrs, parser.lineNumber(), parser.charNumber()));
     }
 
     @Override
@@ -58,30 +65,7 @@ final class VNodeTemplateBodyGenerator implements DomReader {
             return;
         }
         TextTemplate st = TextTemplate.create(data);
-        List<String> fragments = st.fragments();
-        List<String> values = st.exprs();
-        int fragmentsSize = fragments.size();
-        String out;
-        if (fragmentsSize == 1) {
-            out = "\"" + fragments.get(0) + "\"";
-        } else {
-            String fragment;
-            List<String> strings = new ArrayList<>();
-            int i = 0;
-            int valuesSize = values.size();
-            for (; i < valuesSize; i++) {
-                fragment = fragments.get(i);
-                if (!fragment.isEmpty()) {
-                    strings.add("\"" + fragment + "\"");
-                }
-                strings.add(values.get(i));
-            }
-            fragment = fragments.get(i);
-            if (!fragment.isEmpty()) {
-                strings.add("\"" + fragment + "\"");
-            }
-            out = String.join(" + ", strings);
-        }
+        String out = st.interpolate(f -> Strings.wrap(f, "\""), Function.identity(), " + ");
         out = String.format(".text(%s)", out);
         this.asc.push(new Pair<>(desc.peek(), out));
     }
@@ -102,7 +86,7 @@ final class VNodeTemplateBodyGenerator implements DomReader {
         String out;
         if (exprs.containsKey(FOR_KEY)) {
             String forExpr = exprs.get(FOR_KEY).trim();
-            String varName = "children" + desc.size();
+            String varName = String.format("l%dc%d", elt.line(), elt.col());
             Map<String, String> newAttrs = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), CTRL_KEYS));
             String actual = node(elt.copy(newAttrs), nested);
             actual = Strings.indent(" ".repeat(8 + varName.length() + 5), actual);
@@ -132,7 +116,7 @@ final class VNodeTemplateBodyGenerator implements DomReader {
     private String node(DomElement elt, String nested) {
         Map<String, String> statics = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), EXPR_KEYS));
         if (HTML_TAGS.contains(elt.tag())) {
-            String out = String.format("VElement.create(\"%s\")", elt.tag());
+            String out = String.format("com.acme.api.vdom.VElement.create(\"%s\")", elt.tag());
             String idt = " ".repeat("VElement".length());
             if (!statics.isEmpty()) {
                 String attrsOut = statics.entrySet()

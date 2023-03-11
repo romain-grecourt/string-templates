@@ -1,5 +1,8 @@
 package com.acme.api.vdom;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 /**
  * {@link VNode} compiler.
  */
@@ -14,14 +17,24 @@ public final class VNodeCompiler {
      * At compile-time, usages of this method are scanned {@link VNodeTemplate} implementations are code-generated
      * from the template text literals.
      * <p>
-     * Note that the id parameter <b>MUST BE A LITERAL</b> in the source code, however it may be translated during
-     * post-compilation to reduce the final byte-code size.
+     * Note that the template parameter <b>MUST BE A LITERAL</b> in the source code.
      *
-     * @param id   template text, <b>MUST BE A LITERAL</b>
-     * @param args args template arguments
+     * @param template template text, <b>MUST BE A LITERAL</b>
+     * @param args     args template arguments
      * @return VNode
      */
-    public static VNode h(Object id, Object... args) {
-        return new VNodeTemplateRef(id, args);
+    public static VNode h(Object template, Object... args) {
+        // TODO throw an exception...
+        return new VNodeTemplateRef<>(() -> VNodeTemplateProvider.get(template), t -> t.render(args));
+    }
+
+    public static <T> Object f(Consumer<T> consumer) {
+        // TODO throw an exception...
+        return consumer;
+    }
+
+    public static <T> Object f(Supplier<T> consumer) {
+        // TODO throw an exception...
+        return consumer;
     }
 }

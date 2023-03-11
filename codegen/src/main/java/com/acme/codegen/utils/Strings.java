@@ -51,4 +51,15 @@ public final class Strings {
     public static String indent(String delim, String str) {
         return str.lines().collect(joining("\n" + delim));
     }
+
+    /**
+     * Wrap the given string with the given token.
+     *
+     * @param str   string to wrap
+     * @param token token
+     * @return String
+     */
+    public static String wrap(String str, String token) {
+        return token + str + token;
+    }
 }

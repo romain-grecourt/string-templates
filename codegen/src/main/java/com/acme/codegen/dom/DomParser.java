@@ -59,7 +59,13 @@ public final class DomParser {
     private final DomReader reader;
     private final Reader ir;
 
-    private DomParser(String is, DomReader reader) {
+    /**
+     * Create a new instance.
+     *
+     * @param is     input string
+     * @param reader reader
+     */
+    public DomParser(String is, DomReader reader) {
         this.ir = new StringReader(is);
         this.reader = Objects.requireNonNull(reader, "reader is null");
     }

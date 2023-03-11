@@ -2,84 +2,62 @@ package com.acme.codegen;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Types;
+import javax.tools.JavaFileManager;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.Scope;
-import com.sun.source.tree.Tree;
 import com.sun.source.util.Trees;
+import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.tree.TreeMaker;
+import com.sun.tools.javac.util.Context;
+
+import java.nio.file.Path;
 
 /**
- * A utility to bridge between {@link Element} and {@link Tree}.
+ * Compiler environment.
  *
- * @param types types utility
- * @param trees trees utility
- * @param unit  compilation unit
+ * @param types       types utility
+ * @param trees       trees utility
+ * @param compiler    compiler
+ * @param treeMaker   tree maker
+ * @param fileManager file manager
  */
-record Env(Types types, Trees trees, ZTreeMaker treeMaker, CompilationUnitTree unit) {
+record Env(Types types, Trees trees, JavaCompiler compiler, TreeMaker treeMaker, StandardJavaFileManager fileManager) {
 
     /**
-     * Get the scope for the given tree node.
+     * Get the first source output location.
      *
-     * @param node tree node
-     * @return Scope
+     * @return Path
      */
-    Scope scope(Tree node) {
-        return trees.getScope(trees.getPath(unit, node));
+    Path sourceLocation() {
+        return fileManager.getLocationAsPaths(StandardLocation.SOURCE_OUTPUT).iterator().next();
     }
 
     /**
-     * Get the tree node for the given element.
+     * Create a new lookup from the given element.
      *
      * @param element element
-     * @return Tree
+     * @return Lookup
      */
-    Tree tree(Element element) {
-        return trees.getPath(element).getLeaf();
-    }
-
-    /**
-     * Get the {@link Element} instance for a given tree node.
-     *
-     * @param node tree node
-     * @return Element
-     */
-    Element element(Tree node) {
-        return trees.getElement(trees.getPath(unit, node));
-    }
-
-    /**
-     * Get the type element for the given element.
-     *
-     * @param element element
-     * @return TypeElement
-     */
-    TypeElement type(Element element) {
-        return (TypeElement) types.asElement(element.asType());
-    }
-
-    /**
-     * Get the start position for the given tree node.
-     *
-     * @param node tree node
-     * @return position
-     */
-    long startPosition(Tree node) {
-        return trees.getSourcePositions().getStartPosition(unit, node);
+    Lookup lookup(Element element) {
+        return new Lookup(this, trees.getPath(element).getCompilationUnit());
     }
 
     /**
      * Create a new env.
      *
      * @param processingEnv processing environment
-     * @param elt           element
      * @return Env
      */
-    static Env create(ProcessingEnvironment processingEnv, Element elt) {
+    static Env create(ProcessingEnvironment processingEnv) {
+        Types types = processingEnv.getTypeUtils();
         Trees trees = Trees.instance(processingEnv);
-        CompilationUnitTree unit = trees.getPath(elt).getCompilationUnit();
-        ZTreeMaker treeMaker = ZTreeMaker.instance(processingEnv);
-        return new Env(processingEnv.getTypeUtils(), trees, treeMaker, unit);
+        Context context = ((JavacProcessingEnvironment) processingEnv).getContext();
+        StandardJavaFileManager fileManager = (StandardJavaFileManager) context.get(JavaFileManager.class);
+        JavaCompiler compiler = JavaCompiler.instance(context);
+        TreeMaker treeMaker = TreeMaker.instance(context);
+        return new Env(types, trees, compiler, treeMaker, fileManager);
     }
 }

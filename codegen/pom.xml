@@ -34,6 +34,8 @@
                         <arg>jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
                         <arg>--add-exports</arg>
                         <arg>jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

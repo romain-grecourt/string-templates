@@ -27,7 +27,7 @@ record VNodeTemplateInfo(String literal,
      * @return name
      */
     String simpleName() {
-        return enclosingClassName + "_" + position;
+        return enclosingClassName + "_P" + position;
     }
 
     /**
@@ -55,20 +55,20 @@ record VNodeTemplateInfo(String literal,
     /**
      * Create a new template info.
      *
-     * @param node tree node
-     * @param env  env
+     * @param node   tree node
+     * @param lookup lookup
      * @return template info
      */
-    static VNodeTemplateInfo create(MethodInvocationTree node, Env env) {
+    static VNodeTemplateInfo create(MethodInvocationTree node, Lookup lookup) {
         List<? extends ExpressionTree> arguments = node.getArguments();
-        String literal = arguments.get(0).accept(new StringLiteralVisitor(), null);
+        String literal = StringLiteral.of(arguments.get(0));
         List<VNodeTemplateArgInfo> args = arguments.stream()
                                                    .skip(1)
-                                                   .map(e -> VNodeTemplateArgInfo.create(e, env))
+                                                   .map(e -> VNodeTemplateArgInfo.create(e, lookup))
                                                    .collect(Collectors.toList());
-        String pkg = env.unit().getPackageName().toString();
-        CharSequence className = env.scope(node).getEnclosingClass().getSimpleName();
-        long position = env.startPosition(node);
+        String pkg = lookup.unit().getPackageName().toString();
+        CharSequence className = lookup.scope(node).getEnclosingClass().getSimpleName();
+        long position = lookup.startPosition(node);
         return new VNodeTemplateInfo(literal, args, pkg, className, position);
     }
 }

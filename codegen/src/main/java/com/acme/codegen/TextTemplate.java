@@ -2,6 +2,7 @@ package com.acme.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Text template.
@@ -10,6 +11,36 @@ import java.util.List;
  * @param exprs     expressions
  */
 record TextTemplate(List<String> fragments, List<String> exprs) {
+
+    /**
+     * Interpolate this text template.
+     *
+     * @param f1    fragment mapper
+     * @param f2    expression mapper
+     * @param delim delimiter
+     * @return String
+     */
+    String interpolate(Function<String, String> f1, Function<String, String> f2, String delim) {
+        if (fragments.size() == 1) {
+            return f1.apply(fragments.get(0));
+        }
+        String fragment;
+        List<String> strings = new ArrayList<>();
+        int i = 0;
+        int valuesSize = exprs.size();
+        for (; i < valuesSize; i++) {
+            fragment = fragments.get(i);
+            if (!fragment.isEmpty()) {
+                strings.add(f1.apply(fragment));
+            }
+            strings.add(f2.apply(exprs.get(i)));
+        }
+        fragment = fragments.get(i);
+        if (!fragment.isEmpty()) {
+            strings.add(f1.apply(fragment));
+        }
+        return String.join(delim, strings);
+    }
 
     /**
      * Create a new instance.

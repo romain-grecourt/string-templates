@@ -29,6 +29,25 @@ public class VNodeTemplateProvider {
      *
      * @param id object whose reference is used as identity
      * @return template
+     * @throws IllegalArgumentException if the id type is invalid or if the template is not found
+     */
+    public static VNodeTemplate get(Object id) {
+        if (id instanceof String) {
+            // not translated
+            return get(id.hashCode());
+        } else if (id instanceof Integer) {
+            // translated
+            return get((int) id);
+        } else {
+            throw new IllegalArgumentException("Invalid id type: " + id.getClass());
+        }
+    }
+
+    /**
+     * Get a {@link VNodeTemplate} by id.
+     *
+     * @param id object whose reference is used as identity
+     * @return template
      * @throws IllegalArgumentException if the template is not found
      */
     public static VNodeTemplate get(int id) {
