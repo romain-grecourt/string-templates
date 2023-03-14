@@ -1,6 +1,5 @@
 package com.acme.codegen.dom;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**

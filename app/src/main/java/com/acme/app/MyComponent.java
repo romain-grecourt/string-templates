@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.acme.api.Component;
 import com.acme.api.dom.events.Event;
 import com.acme.api.vdom.VNode;
 
-import static com.acme.api.vdom.VNodeCompiler.f;
+//import static com.acme.api.vdom.VNodeCompiler.f;
 import static com.acme.api.vdom.VNodeCompiler.h;
 
 public class MyComponent extends Component {
@@ -19,6 +20,14 @@ public class MyComponent extends Component {
     private boolean bold;
     private Map<String, String> styles = new HashMap<>();
     private List<String> classes = new ArrayList<>();
+
+    static <T extends List<Map<String, Integer>>, R extends Set<?>> T test(List<R> r) {
+        return null;
+    }
+
+    static <T> T ok() {
+        return null;
+    }
 
     @Override
     public VNode render() {

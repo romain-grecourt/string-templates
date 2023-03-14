@@ -35,4 +35,17 @@ public final class Lists {
         }
         return null;
     }
+
+    /**
+     * Create a new {@link ArrayList} with the given element.
+     *
+     * @param element element to add to the list
+     * @param <T>     element type
+     * @return List
+     */
+    public static <T> List<T> of(T element) {
+        List<T> list = new ArrayList<>();
+        list.add(element);
+        return list;
+    }
 }

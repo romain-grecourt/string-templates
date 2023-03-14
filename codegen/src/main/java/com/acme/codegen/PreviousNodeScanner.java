@@ -5,7 +5,7 @@ import com.sun.source.tree.Tree;
 /**
  * A scanner that finds the tree node that precedes the given tree node.
  */
-final class PreviousScanner extends SimpleTreeScanner<Tree> {
+final class PreviousNodeScanner extends SimpleTreeScanner<Tree> {
 
     private Tree result;
     private boolean found;

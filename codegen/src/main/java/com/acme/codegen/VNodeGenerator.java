@@ -26,7 +26,7 @@ import static java.util.stream.Collectors.joining;
 /**
  * {@link DomReader} implementation.
  */
-final class VNodeTemplateBodyGenerator implements DomReader {
+final class VNodeGenerator implements DomReader {
 
     private final Deque<DomElement> desc = new ArrayDeque<>();
     private final Deque<Pair<DomElement, String>> asc = new ArrayDeque<>();
@@ -45,7 +45,7 @@ final class VNodeTemplateBodyGenerator implements DomReader {
      * @throws IOException if an IO error occurs
      */
     static String generate(String is) throws IOException {
-        VNodeTemplateBodyGenerator reader = new VNodeTemplateBodyGenerator();
+        VNodeGenerator reader = new VNodeGenerator();
         reader.read(is);
         Pair<DomElement, String> result = reader.asc.pop();
         return result.second();

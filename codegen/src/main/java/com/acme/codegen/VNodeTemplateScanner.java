@@ -1,6 +1,5 @@
 package com.acme.codegen;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.acme.codegen.utils.Lists;
@@ -25,9 +24,7 @@ final class VNodeTemplateScanner extends TreeScanner<List<MethodInvocationTree>,
     public List<MethodInvocationTree> visitMethodInvocation(MethodInvocationTree node, Lookup lookup) {
         String qName = QName.of(node.getMethodSelect(), lookup);
         if (H.equals(qName)) {
-            List<MethodInvocationTree> templates = new ArrayList<>();
-            templates.add(node);
-            return templates;
+            return Lists.of(node);
         }
         return null;
     }

@@ -62,4 +62,19 @@ public final class Strings {
     public static String wrap(String str, String token) {
         return token + str + token;
     }
+
+    /**
+     * Get the indentation of the last line in the given string.
+     *
+     * @param str string
+     * @return indentation
+     */
+    public static String indentOf(String str) {
+        int index = str.lastIndexOf('\n');
+        int i = index;
+        do {
+            i++;
+        } while (Character.isWhitespace(str.charAt(i)));
+        return " ".repeat(i - (index + 1));
+    }
 }

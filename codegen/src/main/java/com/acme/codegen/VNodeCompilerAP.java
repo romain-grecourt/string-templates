@@ -28,7 +28,6 @@ import static javax.tools.Diagnostic.Kind.MANDATORY_WARNING;
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class VNodeCompilerAP extends AbstractProcessor {
 
-    private static final String SERVICE_FILE = "META-INF/services/com.acme.api.vdom.VNodeTemplateProvider";
     private boolean done;
     private Env env;
 
@@ -67,8 +66,11 @@ public class VNodeCompilerAP extends AbstractProcessor {
             for (Pair<MethodInvocationTree, Lookup> entry : templates) {
                 MethodInvocationTree inv = entry.first();
                 Lookup lookup = entry.second();
-                Tree node = VNodeTemplateBodyParser.parse(inv, lookup);
-                InvocationTranslator.translate(inv, node);
+                String rawTemplate = StringLiteral.of(inv.getArguments().get(0));
+                String templateCode = VNodeGenerator.generate(rawTemplate);
+                System.out.println(templateCode);
+                Tree newNode = lookup.parse(inv, templateCode);
+                InvocationTranslator.translate(inv, newNode);
             }
 
             if (templates.isEmpty()) {
@@ -81,35 +83,4 @@ public class VNodeCompilerAP extends AbstractProcessor {
         done = true;
         return false;
     }
-//
-//    private String generateTemplateImpl(Element element, VNodeTemplateInfo template) throws IOException {
-//        Filer filer = processingEnv.getFiler();
-//        String className = template.simpleName();
-//        String qName = template.pkg() + "." + className;
-//        JavaFileObject fileObject = filer.createSourceFile(qName, element);
-//        try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-//            bw.append(VNodeTemplateGenerator.generate(template));
-//        }
-//        return className;
-//    }
-//
-//    private String generateProviderImpl(Map<String, VNodeTemplateInfo> templates, String pkg) throws IOException {
-//        String qName = pkg + "." + VNodeTemplateProviderGenerator.CNAME;
-//        Filer filer = processingEnv.getFiler();
-//        JavaFileObject fileObject = filer.createSourceFile(qName);
-//        try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-//            bw.append(VNodeTemplateProviderGenerator.generate(templates, pkg));
-//        }
-//        return qName;
-//    }
-//
-//    private void generateServiceFile(List<String> providers) throws IOException {
-//        Filer filer = processingEnv.getFiler();
-//        FileObject fileObject = filer.createResource(StandardLocation.CLASS_OUTPUT, "", SERVICE_FILE);
-//        for (String provider : providers) {
-//            try (BufferedWriter bw = new BufferedWriter(fileObject.openWriter())) {
-//                bw.append(provider).append("\n");
-//            }
-//        }
-//    }
 }

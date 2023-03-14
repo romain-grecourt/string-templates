@@ -11,7 +11,6 @@ import java.util.Objects;
 /**
  * DOM parser.
  */
-@SuppressWarnings("unused")
 public final class DomParser {
 
     private enum STATE {
@@ -68,16 +67,6 @@ public final class DomParser {
     public DomParser(String is, DomReader reader) {
         this.ir = new StringReader(is);
         this.reader = Objects.requireNonNull(reader, "reader is null");
-    }
-
-    /**
-     * Parse the dom in the given string.
-     *
-     * @param is     input sting
-     * @param reader reader
-     */
-    public static void parse(String is, DomReader reader) throws IOException {
-        new DomParser(is, reader).parse();
     }
 
     /**
