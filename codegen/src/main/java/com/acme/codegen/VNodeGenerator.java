@@ -21,7 +21,6 @@ import static com.acme.codegen.utils.Constants.EXPR_KEYS;
 import static com.acme.codegen.utils.Constants.FOR_KEY;
 import static com.acme.codegen.utils.Constants.HTML_TAGS;
 import static com.acme.codegen.utils.Constants.IF_KEY;
-import static java.util.stream.Collectors.joining;
 
 /**
  * {@link DomReader} implementation.
@@ -64,10 +63,14 @@ final class VNodeGenerator implements DomReader {
         if (data.isEmpty()) {
             return;
         }
+        DomElement elt = desc.peek();
+        if (elt == null) {
+            throw new IllegalStateException("Text without parent");
+        }
         TextTemplate st = TextTemplate.create(data);
         String out = st.interpolate(f -> Strings.wrap(f, "\""), Function.identity(), " + ");
-        out = String.format(".text(%s)", out);
-        this.asc.push(new Pair<>(desc.peek(), out));
+        out = String.format("l%dc%d.text(%s);", elt.line(), elt.col(), out);
+        this.asc.push(new Pair<>(elt, out));
     }
 
     @Override
@@ -86,61 +89,51 @@ final class VNodeGenerator implements DomReader {
         String out;
         if (exprs.containsKey(FOR_KEY)) {
             String forExpr = exprs.get(FOR_KEY).trim();
-            String varName = String.format("l%dc%d", elt.line(), elt.col());
             Map<String, String> newAttrs = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), CTRL_KEYS));
             String actual = node(elt.copy(newAttrs), nested);
-            actual = Strings.indent(" ".repeat(8 + varName.length() + 5), actual);
-            out = String.format("""
-                    .children(() -> {
-                        List<VNode> %s = new ArrayList<>();
-                        for (%s) {
-                            %s.add(%s);
-                        }
-                        return %s;
-                    })
-                    """, varName, forExpr, varName, actual, varName);
+            out = String.format("for (%s) {\n    %s\n}", forExpr, Strings.indent("    ", actual));
         } else if (exprs.containsKey(IF_KEY)) {
             throw new UnsupportedOperationException("Not implemented yet");
         } else if (exprs.containsKey(ELSE_KEY)) {
             throw new UnsupportedOperationException("Not implemented yet");
         } else {
             out = node(elt, nested);
-            if (!desc.isEmpty()) {
-                out = String.format(".child(%s)", out);
-                out = Strings.indent(" ".repeat(7), out);
-            }
         }
         this.asc.push(new Pair<>(desc.peek(), out));
     }
 
     private String node(DomElement elt, String nested) {
         Map<String, String> statics = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), EXPR_KEYS));
+        String out;
+        String varName = String.format("l%dc%d", elt.line(), elt.col());
         if (HTML_TAGS.contains(elt.tag())) {
-            String out = String.format("""
-                            com.acme.api.vdom.VElement l%dc%d = com.acme.api.vdom.VElement.create("%s");
-                            """,
-                    elt.line(),
-                    elt.col(),
+            out = String.format("com.acme.api.vdom.VElement %s = com.acme.api.vdom.VElement.create(\"%s\");",
+                    varName,
                     elt.tag());
             if (!statics.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
                 for (Map.Entry<String, String> entry : statics.entrySet()) {
-                    out += String.format("""
-                                    l%dc%d.attr("%s", "%s");
-                                    """,
-                            elt.line(),
-                            elt.col(),
+                    sb.append(String.format("%s.attr(\"%s\", \"%s\");",
+                            varName,
                             entry.getKey(),
-                            entry.getValue());
+                            entry.getValue()));
                 }
+                out += sb.toString();
             }
             if (!nested.isEmpty()) {
                 out += "\n" + nested;
             }
-            return out;
         } else {
             // TODO map elt to component
             // TODO scan component classes
             throw new UnsupportedOperationException("Not implemented yet");
         }
+        if (elt.parent() != null) {
+            return out + "\n" + String.format("l%dc%d.child(%s);",
+                    elt.parent().line(),
+                    elt.parent().col(),
+                    varName);
+        }
+        return out;
     }
 }

@@ -254,12 +254,6 @@ public class SimpleTreeScanner<P> extends TreeScanner<Void, P> {
     }
 
     @Override
-    public Void visitDefaultCaseLabel(DefaultCaseLabelTree node, P p) {
-        visit(node, p);
-        return super.visitDefaultCaseLabel(node, p);
-    }
-
-    @Override
     public Void visitArrayAccess(ArrayAccessTree node, P p) {
         visit(node, p);
         return super.visitArrayAccess(node, p);
@@ -269,18 +263,6 @@ public class SimpleTreeScanner<P> extends TreeScanner<Void, P> {
     public Void visitMemberSelect(MemberSelectTree node, P p) {
         visit(node, p);
         return super.visitMemberSelect(node, p);
-    }
-
-    @Override
-    public Void visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        visit(node, p);
-        return super.visitParenthesizedPattern(node, p);
-    }
-
-    @Override
-    public Void visitMemberReference(MemberReferenceTree node, P p) {
-        visit(node, p);
-        return super.visitMemberReference(node, p);
     }
 
     @Override

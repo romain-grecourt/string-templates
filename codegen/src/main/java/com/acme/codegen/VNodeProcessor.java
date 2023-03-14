@@ -26,7 +26,7 @@ import static javax.tools.Diagnostic.Kind.MANDATORY_WARNING;
  */
 @SupportedAnnotationTypes(value = {"*"})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
-public class VNodeCompilerAP extends AbstractProcessor {
+public class VNodeProcessor extends AbstractProcessor {
 
     private boolean done;
     private Env env;
