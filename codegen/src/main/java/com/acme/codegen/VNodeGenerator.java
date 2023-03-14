@@ -116,19 +116,25 @@ final class VNodeGenerator implements DomReader {
     private String node(DomElement elt, String nested) {
         Map<String, String> statics = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), EXPR_KEYS));
         if (HTML_TAGS.contains(elt.tag())) {
-            String out = String.format("com.acme.api.vdom.VElement.create(\"%s\")", elt.tag());
-            String idt = " ".repeat("VElement".length());
+            String out = String.format("""
+                            com.acme.api.vdom.VElement l%dc%d = com.acme.api.vdom.VElement.create("%s");
+                            """,
+                    elt.line(),
+                    elt.col(),
+                    elt.tag());
             if (!statics.isEmpty()) {
-                String attrsOut = statics.entrySet()
-                                         .stream()
-                                         .map(e -> String.format("""
-                                                 .attr("%s", "%s")
-                                                 """, e.getKey(), e.getValue()))
-                                         .collect(joining());
-                out += "\n" + idt + Strings.indent(idt, attrsOut);
+                for (Map.Entry<String, String> entry : statics.entrySet()) {
+                    out += String.format("""
+                                    l%dc%d.attr("%s", "%s");
+                                    """,
+                            elt.line(),
+                            elt.col(),
+                            entry.getKey(),
+                            entry.getValue());
+                }
             }
             if (!nested.isEmpty()) {
-                out += "\n" + idt + Strings.indent(idt, nested);
+                out += "\n" + nested;
             }
             return out;
         } else {
