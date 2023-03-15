@@ -29,7 +29,12 @@ final class VNodeGenerator implements DomReader {
 
     private final Deque<DomElement> desc = new ArrayDeque<>();
     private final Deque<Pair<DomElement, String>> asc = new ArrayDeque<>();
+    private final int pos;
     private DomParser parser;
+
+    private VNodeGenerator(int pos) {
+        this.pos = pos;
+    }
 
     private void read(String is) throws IOException {
         parser = new DomParser(is, this);
@@ -39,12 +44,13 @@ final class VNodeGenerator implements DomReader {
     /**
      * Generate the body of {@code VNodeTemplate.render}.
      *
-     * @param is input string
-     * @return code
+     * @param is  input string
+     * @param pos position
+     * @return String
      * @throws IOException if an IO error occurs
      */
-    static String generate(String is) throws IOException {
-        VNodeGenerator reader = new VNodeGenerator();
+    static String generate(String is, int pos) throws IOException {
+        VNodeGenerator reader = new VNodeGenerator(pos);
         reader.read(is);
         Pair<DomElement, String> result = reader.asc.pop();
         return result.second();
@@ -69,7 +75,7 @@ final class VNodeGenerator implements DomReader {
         }
         TextTemplate st = TextTemplate.create(data);
         String out = st.interpolate(f -> Strings.wrap(f, "\""), Function.identity(), " + ");
-        out = String.format("l%dc%d.text(%s);", elt.line(), elt.col(), out);
+        out = String.format("p%dl%dc%d.text(%s);", pos, elt.line(), elt.col(), out);
         this.asc.push(new Pair<>(elt, out));
     }
 
@@ -105,7 +111,7 @@ final class VNodeGenerator implements DomReader {
     private String node(DomElement elt, String nested) {
         Map<String, String> statics = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), EXPR_KEYS));
         String out;
-        String varName = String.format("l%dc%d", elt.line(), elt.col());
+        String varName = String.format("p%dl%dc%d", pos, elt.line(), elt.col());
         if (HTML_TAGS.contains(elt.tag())) {
             out = String.format("com.acme.api.vdom.VElement %s = com.acme.api.vdom.VElement.create(\"%s\");",
                     varName,
@@ -129,7 +135,8 @@ final class VNodeGenerator implements DomReader {
             throw new UnsupportedOperationException("Not implemented yet");
         }
         if (elt.parent() != null) {
-            return out + "\n" + String.format("l%dc%d.child(%s);",
+            return out + "\n" + String.format("p%dl%dc%d.child(%s);",
+                    pos,
                     elt.parent().line(),
                     elt.parent().col(),
                     varName);
