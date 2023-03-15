@@ -22,6 +22,7 @@ public final class DomParser {
         TEXT,
         ATTRIBUTES,
         ATTRIBUTE_VALUE,
+        EXPR_KEY,
         EXPR_VALUE,
         SINGLE_QUOTED_VALUE,
         DOUBLE_QUOTED_VALUE,
@@ -33,6 +34,8 @@ public final class DomParser {
     private static final String CLOSE_MARKUP_START = "</";
     private static final char MARKUP_START = '<';
     private static final char MARKUP_END = '>';
+    private static final char EXPR_KEY1 = ':';
+    private static final char EXPR_KEY2 = '@';
     private static final char ATTRIBUTE_VALUE = '=';
     private static final String EXPR_START = "{{";
     private static final String EXPR_END = "}}";
@@ -179,6 +182,8 @@ public final class DomParser {
         } else if (hasToken(ATTRIBUTE_VALUE)) {
             position++;
             state = STATE.ATTRIBUTE_VALUE;
+        } else if (hasToken(EXPR_KEY1) || hasToken(EXPR_KEY2)) {
+            state = STATE.EXPR_KEY;
         } else {
             position++;
             validateNameChar(c, attrNameBuilder.length() == 0);
@@ -186,7 +191,7 @@ public final class DomParser {
         }
     }
 
-    private void processAttributeValue() throws IOException {
+    private void processAttributeValue() {
         if (Character.isWhitespace(c)) {
             position++;
         } else if (hasToken(SINGLE_QUOTE)) {
@@ -195,17 +200,35 @@ public final class DomParser {
         } else if (hasToken(DOUBLE_QUOTE)) {
             position++;
             state = STATE.DOUBLE_QUOTED_VALUE;
-        } else if (hasToken(EXPR_START)) {
-            position += 2;
-            state = STATE.EXPR_VALUE;
         } else {
             throw new DomParserException(String.format(
                     "Invalid state, line: %d, char: %d", lineNo, charNo));
         }
     }
 
+    private void processExprKey() throws IOException {
+        if (Character.isWhitespace(c)) {
+            position++;
+            state = STATE.ATTRIBUTES;
+            attributes.put(attrNameBuilder.toString(), "");
+        } else if (hasToken(MARKUP_END) || hasToken(ELEMENT_SELF_CLOSE)) {
+            state = resumeState;
+            attributes.put(attrNameBuilder.toString(), "");
+        } else if (hasToken(ATTRIBUTE_VALUE)) {
+            position++;
+            state = STATE.EXPR_VALUE;
+        } else {
+            position++;
+            validateNameChar(c, attrNameBuilder.length() == 0);
+            attrNameBuilder.append(c);
+        }
+    }
+
     private void processExprValue() throws IOException {
-        if (hasToken(EXPR_END)) {
+        if (hasToken(EXPR_START)) {
+            position += 2;
+            state = STATE.EXPR_VALUE;
+        } else if (hasToken(EXPR_END)) {
             position += 2;
             state = STATE.ATTRIBUTES;
             attributes.put(attrNameBuilder.toString(), attrValueBuilder.toString());
@@ -276,6 +299,7 @@ public final class DomParser {
                     case NAME -> processName();
                     case ATTRIBUTES -> processAttributes();
                     case ATTRIBUTE_VALUE -> processAttributeValue();
+                    case EXPR_KEY -> processExprKey();
                     case EXPR_VALUE -> processExprValue();
                     case SINGLE_QUOTED_VALUE -> processQuoteValue(SINGLE_QUOTE);
                     case DOUBLE_QUOTED_VALUE -> processQuoteValue(DOUBLE_QUOTE);

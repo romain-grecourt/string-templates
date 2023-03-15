@@ -32,6 +32,25 @@ public final class Maps {
     }
 
     /**
+     * Get the first entry that matches any of the given keys.
+     *
+     * @param map  map
+     * @param keys keys
+     * @param <K>  key type
+     * @param <V>  value type
+     * @return {@code null} if not found
+     */
+    public static <K, V> Map.Entry<K, V> first(Map<K, V> map, Iterable<K> keys) {
+        for (K key : keys) {
+            V value = map.get(key);
+            if (value != null) {
+                return Map.entry(key, value);
+            }
+        }
+        return null;
+    }
+
+    /**
      * Filter the given map with the given predicate.
      *
      * @param map       map to filter

@@ -13,6 +13,7 @@ import com.acme.api.vdom.VNode;
 
 import static com.acme.api.vdom.VNodeCompiler.h;
 
+@SuppressWarnings("unused")
 public class MyComponent extends Component {
 
     private final List<String> names = List.of("Bob", "Alice");
@@ -35,6 +36,9 @@ public class MyComponent extends Component {
     private String ugh = "ugh?";
     private final VNode test = h("<p>?? {{ ugh }} ??</p>");
 
+    private boolean state1;
+    private boolean state2 = true;
+
     @Override
     public VNode render() {
         boolean pretty = false;
@@ -42,7 +46,7 @@ public class MyComponent extends Component {
         VNode vNode = processNode(h("""
                 <div>
                     <!--<my-title
-                        :bold="{{ bold }}"
+                        :bold={{ bold }}
                         :show={{ false }}
                     >
                     The title
@@ -55,7 +59,10 @@ public class MyComponent extends Component {
                     <p :class={{ List.of("red", "bold") }}>Yes!</p>
                     <p :class={{ classes }}>Why!</p>
                     <p :class={{ classes() }}>Why!</p>
+                    <h1 :if={{ state1 }}>Hello</h1>
+                    <h1 :else-if={{ state2 }}>Bonjour</h1>
                     <h1 :else>Yuck!</h1>
+                    <h2>Well..</h2>
                     <br/>
                     <ul class="outlined">
                        <li

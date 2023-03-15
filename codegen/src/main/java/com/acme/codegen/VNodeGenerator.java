@@ -16,6 +16,7 @@ import com.acme.codegen.utils.Pair;
 import com.acme.codegen.utils.Strings;
 
 import static com.acme.codegen.utils.Constants.CTRL_KEYS;
+import static com.acme.codegen.utils.Constants.ELSE_IF_KEY;
 import static com.acme.codegen.utils.Constants.ELSE_KEY;
 import static com.acme.codegen.utils.Constants.EXPR_KEYS;
 import static com.acme.codegen.utils.Constants.FOR_KEY;
@@ -94,15 +95,20 @@ final class VNodeGenerator implements DomReader {
         }
         String nested = String.join("\n", nestedList);
         String out;
-        if (exprs.containsKey(FOR_KEY)) {
-            String forExpr = exprs.get(FOR_KEY).trim();
-            Map<String, String> newAttrs = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), CTRL_KEYS));
-            String actual = node(elt.copy(newAttrs), nested);
-            out = String.format("for (%s) {\n    %s\n}", forExpr, Strings.indent("    ", actual));
-        } else if (exprs.containsKey(IF_KEY)) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        } else if (exprs.containsKey(ELSE_KEY)) {
-            throw new UnsupportedOperationException("Not implemented yet");
+        Map.Entry<String, String> ctrlEntry = Maps.first(exprs, CTRL_KEYS);
+        if (ctrlEntry != null) {
+            Map<String, String> attrs = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), CTRL_KEYS));
+            String actual = node(elt.copy(attrs), nested);
+            actual = Strings.indent("    ", actual);
+            String ctrlKey = ctrlEntry.getKey();
+            String expr = ctrlEntry.getValue();
+            out = switch (ctrlKey) {
+                case FOR_KEY -> String.format("for (%s) {\n    %s\n}", expr, actual);
+                case IF_KEY -> String.format("if (%s) {\n    %s}", expr, actual);
+                case ELSE_IF_KEY -> String.format("else if (%s) {\n    %s}", expr, actual);
+                case ELSE_KEY -> String.format("else {\n    %s}", actual);
+                default -> throw new IllegalStateException("Unsupported control: " + ctrlKey);
+            };
         } else {
             out = node(elt, nested);
         }
