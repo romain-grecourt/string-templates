@@ -5,10 +5,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 
-import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Scope;
-import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 
@@ -98,33 +96,18 @@ record Lookup(Env env, CompilationUnitTree unit) {
     }
 
     /**
-     * Get the parent statement node.
+     * Get an enclosing node.
      *
-     * @param path tree path
+     * @param node  tree node
+     * @param clazz node type
      * @return StatementTree
      */
-    StatementTree enclosingStatement(TreePath path) {
+    <T> T enclosing(Tree node, Class<T> clazz) {
+        TreePath path = path(node);
         while (path != null) {
             Tree leaf = path.getLeaf();
-            if (leaf instanceof StatementTree) {
-                return (StatementTree) leaf;
-            }
-            path = path.getParentPath();
-        }
-        return null;
-    }
-
-    /**
-     * Get the enclosing block node.
-     *
-     * @param path tree path
-     * @return BlockTree
-     */
-    BlockTree enclosingBlock(TreePath path) {
-        while (path != null) {
-            Tree leaf = path.getLeaf();
-            if (leaf.getKind() == Tree.Kind.BLOCK) {
-                return (BlockTree) leaf;
+            if (clazz.isInstance(leaf)) {
+                return clazz.cast(leaf);
             }
             path = path.getParentPath();
         }

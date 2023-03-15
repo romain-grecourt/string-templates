@@ -74,8 +74,9 @@ final class VNodeGenerator implements DomReader {
             throw new IllegalStateException("Text without parent");
         }
         TextTemplate st = TextTemplate.create(data);
-        String out = st.interpolate(f -> Strings.wrap(f, "\""), Function.identity(), " + ");
-        out = String.format("p%dl%dc%d.text(%s);", pos, elt.line(), elt.col(), out);
+        String text = st.interpolate(f -> Strings.wrap(f, "\""), Function.identity(), " + ");
+        String varName = varName(elt);
+        String out = String.format("%s.text(%s);", varName, text);
         this.asc.push(new Pair<>(elt, out));
     }
 
@@ -105,13 +106,17 @@ final class VNodeGenerator implements DomReader {
         } else {
             out = node(elt, nested);
         }
+        if (desc.isEmpty()) {
+            String varName = varName(elt);
+            out = out + "\n" + String.format("VNode __p%d = %s;", pos, varName);
+        }
         this.asc.push(new Pair<>(desc.peek(), out));
     }
 
     private String node(DomElement elt, String nested) {
         Map<String, String> statics = Maps.filter(elt.attrs(), k -> Strings.filter(k, List.of(), EXPR_KEYS));
         String out;
-        String varName = String.format("p%dl%dc%d", pos, elt.line(), elt.col());
+        String varName = varName(elt);
         if (HTML_TAGS.contains(elt.tag())) {
             out = String.format("com.acme.api.vdom.VElement %s = com.acme.api.vdom.VElement.create(\"%s\");",
                     varName,
@@ -135,12 +140,13 @@ final class VNodeGenerator implements DomReader {
             throw new UnsupportedOperationException("Not implemented yet");
         }
         if (elt.parent() != null) {
-            return out + "\n" + String.format("p%dl%dc%d.child(%s);",
-                    pos,
-                    elt.parent().line(),
-                    elt.parent().col(),
-                    varName);
+            String parentVarName = varName(elt.parent());
+            return out + "\n" + String.format("%s.child(%s);", parentVarName, varName);
         }
         return out;
+    }
+
+    private String varName(DomElement elt) {
+        return String.format("__p%dl%dc%d", pos, elt.line(), elt.col());
     }
 }

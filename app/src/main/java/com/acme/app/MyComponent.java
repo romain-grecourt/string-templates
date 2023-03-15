@@ -11,7 +11,6 @@ import com.acme.api.dom.events.Event;
 import com.acme.api.vdom.VElement;
 import com.acme.api.vdom.VNode;
 
-//import static com.acme.api.vdom.VNodeCompiler.f;
 import static com.acme.api.vdom.VNodeCompiler.h;
 
 public class MyComponent extends Component {
@@ -30,16 +29,14 @@ public class MyComponent extends Component {
         return null;
     }
 
-    // TODO test static initializer
-    // TODO test with constructor
-    // TODO test static field
-    // TODO test instance field
-    //private static final VNode TEST = h("<span>OK</span>");
+    private static String OK = "ok";
+    private static final VNode TEST = h("<span>## {{ OK }} ##</span>");
+
+    private String ugh = "ugh?";
+    private final VNode test = h("<p>?? {{ ugh }} ??</p>");
 
     @Override
     public VNode render() {
-        // What is actually done at runtime...
-        // return new VNodeTemplateRef<>(MyComponent_P601::new, t -> t.render(this.names, (Consumer<Event>) this::onClick));
         boolean pretty = false;
         boolean ugly = true;
         VNode vNode = processNode(h("""
@@ -71,7 +68,7 @@ public class MyComponent extends Component {
                 </div>
                 """));
         if (vNode instanceof VElement) {
-            System.out.println("ok");
+            System.getenv("test");
         }
         return vNode;
     }
