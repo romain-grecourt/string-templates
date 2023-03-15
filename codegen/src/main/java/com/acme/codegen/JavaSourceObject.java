@@ -4,11 +4,11 @@ import javax.tools.SimpleJavaFileObject;
 import java.net.URI;
 
 /**
- * {@link javax.tools.JavaFileObject} backed by a string.
+ * {@link javax.tools.JavaFileObject} backed by a {@link CharSequence}
  */
-class JavaStringObject extends SimpleJavaFileObject {
+class JavaSourceObject extends SimpleJavaFileObject {
 
-    private final String code;
+    private final CharSequence code;
 
     /**
      * Create a new instance.
@@ -16,9 +16,8 @@ class JavaStringObject extends SimpleJavaFileObject {
      * @param name class name
      * @param code source code
      */
-    JavaStringObject(String name, String code) {
-        super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
-                Kind.SOURCE);
+    JavaSourceObject(String name, CharSequence code) {
+        super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension), Kind.SOURCE);
         this.code = code;
     }
 

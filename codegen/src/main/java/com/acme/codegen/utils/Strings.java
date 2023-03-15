@@ -74,7 +74,7 @@ public final class Strings {
         int i = index;
         do {
             i++;
-        } while (Character.isWhitespace(str.charAt(i)));
+        } while (i < str.length() && Character.isWhitespace(str.charAt(i)));
         return " ".repeat(i - (index + 1));
     }
 }

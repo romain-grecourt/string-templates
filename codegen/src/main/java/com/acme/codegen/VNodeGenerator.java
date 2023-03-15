@@ -23,7 +23,7 @@ import static com.acme.codegen.utils.Constants.HTML_TAGS;
 import static com.acme.codegen.utils.Constants.IF_KEY;
 
 /**
- * {@link DomReader} implementation.
+ * {@link DomReader} implementation that generates source code.
  */
 final class VNodeGenerator implements DomReader {
 

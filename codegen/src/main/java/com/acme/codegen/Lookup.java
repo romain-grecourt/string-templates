@@ -1,15 +1,16 @@
 package com.acme.codegen;
 
 import javax.lang.model.element.Element;
-import javax.tools.JavaFileObject;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.List;
 
-import com.acme.codegen.utils.Strings;
+import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Scope;
+import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.tree.JCTree;
 
 /**
  * Utility for a given compilation unit.
@@ -54,24 +55,13 @@ record Lookup(Env env, CompilationUnitTree unit) {
      *
      * @param node     node to scan
      * @param startPos start position
+     * @param endPos   end position
      * @return Tree
      */
-    Tree find(Tree node, long startPos) {
-        NodeFinder scanner = new NodeFinder(this);
-        node.accept(scanner, startPos);
-        return scanner.result();
-    }
-
-    /**
-     * Find the node that precedes the given node.
-     *
-     * @param node node to scan
-     * @return Tree
-     */
-    Tree previous(Tree node) {
-        PreviousNodeScanner scanner = new PreviousNodeScanner();
-        unit.accept(scanner, node);
-        return scanner.result();
+    List<Tree> find(Tree node, int startPos, int endPos) {
+        NodeFinder finder = new NodeFinder(this, startPos, endPos);
+        node.accept(finder, null);
+        return finder.result();
     }
 
     /**
@@ -85,55 +75,106 @@ record Lookup(Env env, CompilationUnitTree unit) {
     }
 
     /**
+     * Test if a path has an ancestor.
+     *
+     * @param path   path
+     * @param limit  limit
+     * @param parent parent
+     * @return {@code true} if found, {@code false} otherwise
+     */
+    boolean hasAncestor(TreePath path, Tree limit, Tree parent) {
+        TreePath pp = path.getParentPath();
+        while (pp != null) {
+            Tree leaf = pp.getLeaf();
+            if (leaf == parent) {
+                return true;
+            }
+            if (leaf == limit) {
+                break;
+            }
+            pp = pp.getParentPath();
+        }
+        return false;
+    }
+
+    /**
+     * Get the parent statement node.
+     *
+     * @param path tree path
+     * @return StatementTree
+     */
+    StatementTree enclosingStatement(TreePath path) {
+        while (path != null) {
+            Tree leaf = path.getLeaf();
+            if (leaf instanceof StatementTree) {
+                return (StatementTree) leaf;
+            }
+            path = path.getParentPath();
+        }
+        return null;
+    }
+
+    /**
+     * Get the enclosing block node.
+     *
+     * @param path tree path
+     * @return BlockTree
+     */
+    BlockTree enclosingBlock(TreePath path) {
+        while (path != null) {
+            Tree leaf = path.getLeaf();
+            if (leaf.getKind() == Tree.Kind.BLOCK) {
+                return (BlockTree) leaf;
+            }
+            path = path.getParentPath();
+        }
+        return null;
+    }
+
+    /**
      * Get the start position for the given tree node.
      *
      * @param node tree node
      * @return position
      */
-    long startPosition(Tree node) {
-        return env.trees().getSourcePositions().getStartPosition(unit, node);
+    int startPosition(Tree node) {
+        return (int) env.trees().getSourcePositions().getStartPosition(unit, node);
     }
 
     /**
-     * Get the end position for the given tree node.
+     * Get the source code for the compilation unit.
      *
-     * @param node tree node
-     * @return position
+     * @return CharSequence
      */
-    long getEndPosition(Tree node) {
-        return env.trees().getSourcePositions().getEndPosition(unit, node);
+    CharSequence unitSource() {
+        try {
+            return unit.getSourceFile().getCharContent(true);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     /**
-     * Parse the given source as a replacement of the given node.
+     * Parse the given source in the context of the given tree node.
      *
      * @param node   tree node
      * @param source source code
-     * @return Tree
+     * @return list of tree nodes
      */
-    Tree parse(Tree node, String source) {
-        long startPos = startPosition(node);
-        long endPos = getEndPosition(node);
+    List<Tree> parse(Tree node, String source) {
+        PartialSource partial = PartialSource.create(node, source, this);
+        String className = enclosingClassName(node);
+        CompilationUnitTree newUnit = env.parse(className, partial.source());
+        return find(newUnit, partial.startPos(), partial.endPos());
+    }
 
-        // create a new java source with the segment of node substituted
-        CharSequence originalSource = null;
-        try {
-            originalSource = unit.getSourceFile().getCharContent(true);
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
-        CharSequence before = originalSource.subSequence(0, (int) startPos);
-        CharSequence after = originalSource.subSequence((int) endPos, originalSource.length() - 1);
-        String indent = Strings.indentOf(before.toString());
-        String newSource = before + Strings.indent(indent, source) + after;
-
-        // parse the new source
-        JavaFileObject fileObject = new JavaStringObject(enclosingClassName(node), newSource);
-        JCTree.JCCompilationUnit newUnit = env.compiler().parse(fileObject);
-
-        // get the AST node for the source
-        Tree previous = previous(node);
-        long previousPos = startPosition(previous);
-        return find(newUnit, previousPos);
+    /**
+     * Insert the given nodes.
+     *
+     * @param node  tree node to translate
+     * @param nodes nodes to insert
+     */
+    void translate(Tree node, List<Tree> nodes) {
+        Translator.translate(node, nodes, this);
     }
 }

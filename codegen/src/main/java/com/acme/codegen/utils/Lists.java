@@ -27,7 +27,7 @@ public final class Lists {
             if (l2 != null) {
                 result.addAll(l2);
             }
-            return l1;
+            return result;
         }
         if (l2 != null) {
             result.addAll(l2);

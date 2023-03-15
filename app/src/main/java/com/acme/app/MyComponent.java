@@ -8,6 +8,7 @@ import java.util.Set;
 
 import com.acme.api.Component;
 import com.acme.api.dom.events.Event;
+import com.acme.api.vdom.VElement;
 import com.acme.api.vdom.VNode;
 
 //import static com.acme.api.vdom.VNodeCompiler.f;
@@ -29,13 +30,19 @@ public class MyComponent extends Component {
         return null;
     }
 
+    // TODO test static initializer
+    // TODO test with constructor
+    // TODO test static field
+    // TODO test instance field
+    //private static final VNode TEST = h("<span>OK</span>");
+
     @Override
     public VNode render() {
         // What is actually done at runtime...
         // return new VNodeTemplateRef<>(MyComponent_P601::new, t -> t.render(this.names, (Consumer<Event>) this::onClick));
         boolean pretty = false;
         boolean ugly = true;
-        return h("""
+        VNode vNode = processNode(h("""
                 <div>
                     <!--<my-title
                         :bold="{{ bold }}"
@@ -62,7 +69,15 @@ public class MyComponent extends Component {
                        </li>
                     </ul>
                 </div>
-                """);
+                """));
+        if (vNode instanceof VElement) {
+            System.out.println("ok");
+        }
+        return vNode;
+    }
+
+    private static VNode processNode(VNode v) {
+        return v;
     }
 
     private List<String> classes() {

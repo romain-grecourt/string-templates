@@ -66,11 +66,10 @@ public class VNodeProcessor extends AbstractProcessor {
             for (Pair<MethodInvocationTree, Lookup> entry : templates) {
                 MethodInvocationTree inv = entry.first();
                 Lookup lookup = entry.second();
-                String rawTemplate = StringLiteral.of(inv.getArguments().get(0));
-                String templateCode = VNodeGenerator.generate(rawTemplate);
-                System.out.println(templateCode);
-                Tree newNode = lookup.parse(inv, templateCode);
-                InvocationTranslator.translate(inv, newNode);
+                String template = StringLiteral.of(inv.getArguments().get(0));
+                String code = VNodeGenerator.generate(template);
+                List<Tree> nodes = lookup.parse(inv, code);
+                lookup.translate(inv, nodes);
             }
 
             if (templates.isEmpty()) {
