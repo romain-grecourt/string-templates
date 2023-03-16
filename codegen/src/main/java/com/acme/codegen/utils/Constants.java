@@ -21,6 +21,7 @@ public final class Constants {
             "head",
             "styles",
             "body",
+            "button",
             "div",
             "p",
             "ul",

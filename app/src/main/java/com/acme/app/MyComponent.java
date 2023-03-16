@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.acme.api.Component;
-import com.acme.api.dom.events.Event;
 import com.acme.api.vdom.VElement;
 import com.acme.api.vdom.VNode;
 
@@ -62,6 +61,8 @@ public class MyComponent extends Component {
                     <h1 :else-if={{ state2 }}>Bonjour</h1>
                     <h1 :else>Yuck!</h1>
                     <h2>Well..</h2>
+                    <button @click={{ e ->  ugh = "yeah" }}>CLICK ME</button>
+                    <div>{{ ugh }}</div>
                     <br/>
                     <NameList :names={{ names }} />
                 </div>
@@ -84,8 +85,5 @@ public class MyComponent extends Component {
             cls.add("not-bold");
         }
         return cls;
-    }
-
-    private void onClick(Event event) {
     }
 }

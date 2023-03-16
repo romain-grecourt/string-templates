@@ -100,16 +100,15 @@ final class VNodeGenerator implements DomReader {
         DomAttrs attrs = elt.attrs();
         String nested = reduce(elt);
         String out;
-        Map<String, String> controls = attrs.controls();
-        if (!controls.isEmpty()) {
+        if (!attrs.controls().isEmpty()) {
             StringBuilder sb = new StringBuilder();
-            for (Entry<String, String> entry : controls.entrySet()) {
+            attrs.controls().forEach((k, v) -> {
                 String actual = node(elt.copy(attrs.regulars()), nested);
                 if (!sb.isEmpty()) {
                     sb.append("\n");
                 }
-                sb.append(genCtrlBlock(entry.getKey(), entry.getValue(), actual));
-            }
+                sb.append(genCtrlBlock(k, v, actual));
+            });
             out = sb.toString();
         } else {
             out = node(elt, nested);
@@ -124,26 +123,28 @@ final class VNodeGenerator implements DomReader {
 
     private String node(DomElement elt, String nested) {
         DomAttrs attrs = elt.attrs();
-        Map<String, String> statics = attrs.statics();
-        Map<String, String> dynamics = attrs.dynamics();
         String varName = varName(elt);
         String out;
         if (HTML_TAGS.contains(elt.tag())) {
             out = String.format("%s %s = %s.create(\"%s\");", V_ELT, varName, V_ELT, elt.tag());
-            if (!statics.isEmpty()) {
+            if (!attrs.statics().isEmpty()) {
                 out += "\n";
-                out += genAttrs(varName, statics, Strings::quote);
+                out += genAttrs(varName, attrs.statics(), Strings::quote);
             }
-            if (!dynamics.isEmpty()) {
+            if (!attrs.dynamics().isEmpty()) {
                 out += "\n";
-                out += genAttrs(varName, dynamics, Function.identity());
+                out += genAttrs(varName, attrs.dynamics(), Function.identity());
+            }
+            if (!attrs.events().isEmpty()) {
+                out += "\n";
+                out += genEvents(varName, attrs.events());
             }
         } else {
             TypeElement type = components.get(elt.tag());
             if (type == null) {
                 throw new IllegalStateException("Unresolved component class: " + elt.tag());
             }
-            Map<String, String> args = Maps.combine(Maps.mapValue(statics, Strings::quote), attrs.dynamics());
+            Map<String, String> args = Maps.combine(Maps.mapValue(attrs.statics(), Strings::quote), attrs.dynamics());
             Set<String> argNames = template.componentArgs(type, args.keySet());
             if (argNames == null) {
                 throw new IllegalStateException(String.format(
@@ -191,6 +192,25 @@ final class VNodeGenerator implements DomReader {
             Entry<String, String> entry = it.next();
             sb.append(String.format("%s.attr(\"%s\", %s);",
                     varName, entry.getKey(), mapper.apply(entry.getValue())));
+            if (it.hasNext()) {
+                sb.append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private static String genEvents(String varName, Map<String, String> attrs) {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Entry<String, String>> it = attrs.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, String> entry = it.next();
+            String event = entry.getKey();
+            String method = switch (entry.getKey()) {
+                case "click" -> "onClick";
+                case "keyUp" -> "onKeyUp";
+                default -> throw new IllegalArgumentException("Unsupported event: " + event);
+            };
+            sb.append(String.format("%s.%s(%s);", varName, method, entry.getValue()));
             if (it.hasNext()) {
                 sb.append("\n");
             }
