@@ -42,13 +42,13 @@ record VNodeTemplate(MethodInvocationTree inv, Lookup lookup) {
     }
 
     /**
-     * Get the ordered component argument names.
+     * Get the ordered component parameter names.
      *
      * @param type component type
      * @param keys markup keys
      * @return Set
      */
-    Set<String> componentArgs(TypeElement type, Set<String> keys) {
+    Set<String> componentParams(TypeElement type, Set<String> keys) {
         return type.accept(new ConstructorVisitor(), keys);
     }
 
@@ -59,7 +59,7 @@ record VNodeTemplate(MethodInvocationTree inv, Lookup lookup) {
      * @throws IOException if an IO error occurs
      */
     void apply(Map<String, TypeElement> components) throws IOException {
-        String code = new VNodeGenerator(this, components).generate();
+        String code = new VDomGenerator(this, components).generate();
         List<Tree> nodes = lookup.parse(inv, code);
         lookup.translate(inv, nodes);
     }

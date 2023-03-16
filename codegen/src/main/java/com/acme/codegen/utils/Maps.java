@@ -4,10 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -36,57 +33,6 @@ public final class Maps {
             }
         }
         return false;
-    }
-
-    /**
-     * Get the first entry that matches any of the given keys.
-     *
-     * @param map  map
-     * @param keys keys
-     * @param <K>  key type
-     * @param <V>  value type
-     * @return {@code null} if not found
-     */
-    public static <K, V> Map.Entry<K, V> first(Map<K, V> map, Iterable<K> keys) {
-        for (K key : keys) {
-            V value = map.get(key);
-            if (value != null) {
-                return Map.entry(key, value);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Filter the given map with the given predicate.
-     *
-     * @param map       map to filter
-     * @param predicate predicate
-     * @param <K>       key type
-     * @param <V>       value type
-     * @return new map
-     */
-    public static <K, V> Map<K, V> filter(Map<K, V> map, Predicate<K> predicate) {
-        return map.entrySet()
-                  .stream()
-                  .filter(entry -> predicate.test(entry.getKey()))
-                  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    /**
-     * Filter the given map with the given predicate.
-     *
-     * @param map       map to filter
-     * @param predicate predicate
-     * @param <K>       key type
-     * @param <V>       value type
-     * @return new map
-     */
-    public static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> predicate, Function<K, K> mapper) {
-        return map.entrySet()
-                  .stream()
-                  .filter(entry -> predicate.test(entry.getKey(), entry.getValue()))
-                  .collect(Collectors.toMap(e -> mapper.apply(e.getKey()), Map.Entry::getValue));
     }
 
     /**

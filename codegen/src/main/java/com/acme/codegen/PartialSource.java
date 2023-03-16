@@ -12,13 +12,11 @@ import com.sun.source.tree.VariableTree;
 /**
  * Partial source utility.
  *
- * @param lookup   lookup
- * @param node     context tree node
  * @param source   actual partial source code
  * @param startPos start position in the original unit source
  * @param endPos   end position in the original unit source
  */
-record PartialSource(Lookup lookup, Tree node, CharSequence source, int startPos, int endPos) {
+record PartialSource(CharSequence source, int startPos, int endPos) {
 
     /**
      * Create a new partial source.
@@ -70,6 +68,6 @@ record PartialSource(Lookup lookup, Tree node, CharSequence source, int startPos
         String indent = Strings.indentOf(before.toString());
         String newSource = before + Strings.indent(indent, theSource) + "\n" + indent + after;
         int endPos = newSource.length() - after.length();
-        return new PartialSource(lookup, node, newSource, startPos, endPos);
+        return new PartialSource(newSource, startPos, endPos);
     }
 }

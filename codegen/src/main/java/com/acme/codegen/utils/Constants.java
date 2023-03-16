@@ -68,7 +68,17 @@ public final class Constants {
     public static final Set<String> CTRL_KEYS = Set.of(FOR_KEY, IF_KEY, ELSE_KEY, ELSE_IF_KEY);
 
     /**
-     * The attribute key prefixes for expression attributes.
+     * The prefix for binding attributes.
      */
-    public static final Set<String> EXPR_KEYS = Set.of(":", "@");
+    public static final String BINDING_PREFIX = ":";
+
+    /**
+     * The prefix for event attributes.
+     */
+    public static final String EVENT_PREFIX = "@";
+
+    /**
+     * The prefixes for attributes that have expression values.
+     */
+    public static final Set<String> EXPR_PREFIXES = Set.of(BINDING_PREFIX, EVENT_PREFIX);
 }

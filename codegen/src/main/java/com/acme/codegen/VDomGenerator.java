@@ -28,7 +28,7 @@ import static com.acme.codegen.utils.Constants.IF_KEY;
 /**
  * {@link DomReader} implementation that generates template source code.
  */
-final class VNodeGenerator implements DomReader {
+final class VDomGenerator implements DomReader {
 
     private static final String V_ELT = "com.acme.api.vdom.VElement";
     private static final String V_COMP = "com.acme.api.vdom.VComponent";
@@ -46,7 +46,7 @@ final class VNodeGenerator implements DomReader {
      * @param template   template
      * @param components components
      */
-    VNodeGenerator(VNodeTemplate template, Map<String, TypeElement> components) {
+    VDomGenerator(VNodeTemplate template, Map<String, TypeElement> components) {
         this.components = components;
         this.template = template;
         this.pos = template.startPosition();
@@ -131,9 +131,9 @@ final class VNodeGenerator implements DomReader {
                 out += "\n";
                 out += genAttrs(varName, attrs.statics(), Strings::quote);
             }
-            if (!attrs.dynamics().isEmpty()) {
+            if (!attrs.bindings().isEmpty()) {
                 out += "\n";
-                out += genAttrs(varName, attrs.dynamics(), Function.identity());
+                out += genAttrs(varName, attrs.bindings(), Function.identity());
             }
             if (!attrs.events().isEmpty()) {
                 out += "\n";
@@ -144,16 +144,17 @@ final class VNodeGenerator implements DomReader {
             if (type == null) {
                 throw new IllegalStateException("Unresolved component class: " + elt.tag());
             }
-            Map<String, String> args = Maps.combine(Maps.mapValue(attrs.statics(), Strings::quote), attrs.dynamics());
-            Set<String> argNames = template.componentArgs(type, args.keySet());
-            if (argNames == null) {
+            Map<String, String> literals = Maps.mapValue(attrs.statics(), Strings::quote);
+            Map<String, String> params = Maps.combine(literals, attrs.bindings());
+            Set<String> keys = template.componentParams(type, params.keySet());
+            if (keys == null) {
                 throw new IllegalStateException(String.format(
                         "Unresolved component constructor, tag: '%s', args: [%s]",
-                        elt.tag(), String.join(",", args.keySet())));
+                        elt.tag(), String.join(",", params.keySet())));
             }
-            String join = String.join(", ", Maps.values(args, argNames));
-            CharSequence qName = type.getQualifiedName();
-            out = String.format("%s %sc = new %s(%s);", qName, varName, qName, join);
+            String ctorArgs = String.join(", ", Maps.values(params, keys));
+            CharSequence typeQName = type.getQualifiedName();
+            out = String.format("%s %sc = new %s(%s);", typeQName, varName, typeQName, ctorArgs);
             out += "\n";
             out += String.format("%s %s = %s.create(%sc);", V_COMP, varName, V_COMP, varName);
         }

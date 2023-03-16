@@ -54,13 +54,13 @@ public class ComponentAP extends AbstractProcessor {
             List<VNodeTemplate> templates = new ArrayList<>();
 
             // scan for templates
-            for (Element rootElt : roundEnv.getRootElements()) {
-                if (!env.inherits(rootElt, COMPONENT_QNAME)) {
+            for (Element elt : roundEnv.getRootElements()) {
+                if (!env.inherits(elt, COMPONENT_QNAME)) {
                     continue;
                 }
-                components.put(rootElt.getSimpleName().toString(), (TypeElement) rootElt);
-                Lookup lookup = env.lookup(rootElt);
-                Tree node = lookup.tree(rootElt);
+                components.put(elt.getSimpleName().toString(), (TypeElement) elt);
+                Lookup lookup = env.lookup(elt);
+                Tree node = lookup.tree(elt);
                 List<VNodeTemplate> scanned = node.accept(new VNodeTemplateScanner(), lookup);
                 if (scanned != null) {
                     templates.addAll(scanned);

@@ -30,18 +30,6 @@ public final class Strings {
     }
 
     /**
-     * Test if the given string is included.
-     *
-     * @param str      string to match
-     * @param includes list of include prefixes
-     * @param excludes list of exclude prefixes
-     * @return {@code true} if matched, {@code false} otherwise
-     */
-    public static boolean filter(String str, Collection<String> includes, Collection<String> excludes) {
-        return !startsWith(excludes, str) && (includes.isEmpty() || startsWith(includes, str));
-    }
-
-    /**
      * Split the lines in the given string and join them with the given delimiter.
      *
      * @param delim delimiter
