@@ -1,14 +1,14 @@
 package com.acme.api.vdom;
 
-import com.acme.api.dom.events.EventListener;
-import com.acme.api.dom.events.KeyboardEvent;
-import com.acme.api.dom.events.MouseEvent;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import com.acme.api.dom.events.EventListener;
+import com.acme.api.dom.events.KeyboardEvent;
+import com.acme.api.dom.events.MouseEvent;
 
 /**
  * Tree {@link VNode}.
@@ -24,6 +24,23 @@ public final class VElement implements VNode {
 
     private VElement(String tag) {
         this.tag = tag;
+    }
+
+    /**
+     * Unwrap the given {@link VNode} into a {@link VElement}.
+     *
+     * @param node node
+     * @return VElement
+     */
+    public static VElement unwrap(VNode node) {
+        if (node instanceof VNodeSupplier) {
+            while (node instanceof VNodeSupplier) {
+                node = ((VNodeSupplier) node).get();
+            }
+        } else if (!(node instanceof VElement)) {
+            throw new IllegalArgumentException("Unsupported node type: " + node.getClass());
+        }
+        return (VElement) node;
     }
 
     /**
@@ -45,6 +62,70 @@ public final class VElement implements VNode {
      */
     public VElement attr(String key, String value) {
         attributes.put(key, value);
+        return this;
+    }
+
+    /**
+     * Set an attribute.
+     *
+     * @param key   attribute name
+     * @param value attribute value
+     * @return this instance
+     */
+    public VElement attr(String key, List<String> value) {
+        StringBuilder sb;
+        if (key.equals("class")) {
+            sb = new StringBuilder();
+            for (String v : value) {
+                if (!sb.isEmpty()) {
+                    sb.append(" ");
+                }
+                sb.append(v);
+            }
+        } else {
+            throw new UnsupportedOperationException("Map attribute value not supported");
+        }
+        attributes.put(key, sb.toString());
+        return this;
+    }
+
+    /**
+     * Set an attribute.
+     *
+     * @param key   attribute name
+     * @param value attribute value
+     * @return this instance
+     */
+    public VElement attr(String key, Map<String, ? extends Object> value) {
+        StringBuilder sb;
+        switch (key) {
+            case "class" -> {
+                sb = new StringBuilder();
+                value.forEach((k, v) -> {
+                    if (v instanceof Boolean) {
+                        if ((Boolean) v) {
+                            if (!sb.isEmpty()) {
+                                sb.append(" ");
+                            }
+                            sb.append(k);
+                        }
+                    }
+                });
+            }
+            case "style" -> {
+                sb = new StringBuilder();
+                value.forEach((k, v) -> {
+                    if (v instanceof String) {
+                        sb.append(k)
+                          .append(": ")
+                          .append((String) v)
+                          .append(";");
+                    }
+                });
+            }
+            default -> throw new UnsupportedOperationException("Map attribute value not supported");
+        }
+        attributes.put(key, sb.toString());
         return this;
     }
 

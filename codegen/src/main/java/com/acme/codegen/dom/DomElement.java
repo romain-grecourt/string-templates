@@ -11,7 +11,7 @@ import java.util.Map;
  * @param line   line number
  * @param col    column number
  */
-public record DomElement(DomElement parent, String tag, Map<String, String> attrs, int line, int col) {
+public record DomElement(DomElement parent, String tag, DomAttrs attrs, int line, int col) {
 
     /**
      * Create a copy of this element with different attributes.
@@ -20,6 +20,6 @@ public record DomElement(DomElement parent, String tag, Map<String, String> attr
      * @return copy
      */
     public DomElement copy(Map<String, String> attrs) {
-        return new DomElement(parent, tag, attrs, line, col);
+        return new DomElement(parent, tag, new DomAttrs(attrs), line, col);
     }
 }

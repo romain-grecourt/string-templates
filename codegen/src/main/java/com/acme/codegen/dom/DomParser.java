@@ -210,10 +210,20 @@ public final class DomParser {
         if (Character.isWhitespace(c)) {
             position++;
             state = STATE.ATTRIBUTES;
+            if (attrNameBuilder.length() == 1) {
+                throw new DomParserException(String.format(
+                        "Empty expression attribute name, line: %d, char: %d", lineNo, charNo));
+            }
             attributes.put(attrNameBuilder.toString(), "");
+            attrNameBuilder = new StringBuilder();
         } else if (hasToken(MARKUP_END) || hasToken(ELEMENT_SELF_CLOSE)) {
             state = resumeState;
+            if (attrNameBuilder.length() == 1) {
+                throw new DomParserException(String.format(
+                        "Empty expression attribute name, line: %d, char: %d", lineNo, charNo));
+            }
             attributes.put(attrNameBuilder.toString(), "");
+            attrNameBuilder = new StringBuilder();
         } else if (hasToken(ATTRIBUTE_VALUE)) {
             position++;
             state = STATE.EXPR_VALUE;

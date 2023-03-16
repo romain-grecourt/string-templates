@@ -11,8 +11,6 @@ import com.acme.api.dom.events.Event;
 import com.acme.api.vdom.VElement;
 import com.acme.api.vdom.VNode;
 
-import static com.acme.api.vdom.VNodeCompiler.h;
-
 @SuppressWarnings("unused")
 public class MyComponent extends Component {
 
@@ -20,7 +18,7 @@ public class MyComponent extends Component {
 
     private boolean bold;
     private Map<String, String> styles = new HashMap<>();
-    private List<String> classes = new ArrayList<>();
+    private List<String> classes = List.of("foo", "bar");
 
     static <T extends List<Map<String, Integer>>, R extends Set<?>> T test(List<R> r) {
         return null;
@@ -45,6 +43,7 @@ public class MyComponent extends Component {
         boolean ugly = true;
         VNode vNode = processNode(h("""
                 <div>
+                    <!-- <component :name={{ myComponent }} /> -->
                     <!--<my-title
                         :bold={{ bold }}
                         :show={{ false }}
@@ -64,14 +63,7 @@ public class MyComponent extends Component {
                     <h1 :else>Yuck!</h1>
                     <h2>Well..</h2>
                     <br/>
-                    <ul class="outlined">
-                       <li
-                         :for={{ var name : names }}
-                         @click={{ this::onClick }}
-                       >
-                           <span>Name: {{ name }}.</span>
-                       </li>
-                    </ul>
+                    <NameList :names={{ names }} />
                 </div>
                 """));
         if (vNode instanceof VElement) {
@@ -88,6 +80,8 @@ public class MyComponent extends Component {
         List<String> cls = new ArrayList<>();
         if (bold) {
             cls.add("bold");
+        } else {
+            cls.add("not-bold");
         }
         return cls;
     }

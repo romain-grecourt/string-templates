@@ -12,22 +12,23 @@ import javax.lang.model.element.TypeElement;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import com.acme.codegen.utils.Pair;
-import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree;
 
 import static javax.tools.Diagnostic.Kind.MANDATORY_WARNING;
 
 /**
- * Generic annotation processors that scan usages of {@code com.acme.api.vdom.VNodeCompiler.h}.
+ * Generic annotation processors that scan usages of {@code com.acme.api.Component.h}.
  */
 @SupportedAnnotationTypes(value = {"*"})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
-public class VNodeProcessor extends AbstractProcessor {
+public class ComponentAP extends AbstractProcessor {
 
+    private static final String COMPONENT_QNAME = "com.acme.api.Component";
     private boolean done;
     private Env env;
 
@@ -49,27 +50,25 @@ public class VNodeProcessor extends AbstractProcessor {
             return false;
         }
         try {
-            List<Pair<MethodInvocationTree, Lookup>> templates = new ArrayList<>();
+            Map<String, TypeElement> components = new HashMap<>();
+            List<VNodeTemplate> templates = new ArrayList<>();
 
             // scan for templates
             for (Element rootElt : roundEnv.getRootElements()) {
+                if (!env.inherits(rootElt, COMPONENT_QNAME)) {
+                    continue;
+                }
+                components.put(rootElt.getSimpleName().toString(), (TypeElement) rootElt);
                 Lookup lookup = env.lookup(rootElt);
                 Tree node = lookup.tree(rootElt);
-                List<MethodInvocationTree> scanned = node.accept(new VNodeTemplateScanner(), lookup);
-                if (scanned != null && !scanned.isEmpty()) {
-                    for (MethodInvocationTree inv : scanned) {
-                        templates.add(new Pair<>(inv, lookup));
-                    }
+                List<VNodeTemplate> scanned = node.accept(new VNodeTemplateScanner(), lookup);
+                if (scanned != null) {
+                    templates.addAll(scanned);
                 }
             }
 
-            for (Pair<MethodInvocationTree, Lookup> entry : templates) {
-                MethodInvocationTree inv = entry.first();
-                Lookup lookup = entry.second();
-                String template = StringLiteral.of(inv.getArguments().get(0));
-                String code = VNodeGenerator.generate(template, lookup.startPosition(inv));
-                List<Tree> nodes = lookup.parse(inv, code);
-                lookup.translate(inv, nodes);
+            for (VNodeTemplate template : templates) {
+                template.apply(components);
             }
 
             if (templates.isEmpty()) {

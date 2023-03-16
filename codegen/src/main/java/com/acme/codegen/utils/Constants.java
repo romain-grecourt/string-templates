@@ -2,6 +2,7 @@ package com.acme.codegen.utils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Constants.
@@ -56,12 +57,17 @@ public final class Constants {
     public static final String ELSE_IF_KEY = ":else-if";
 
     /**
-     * The flow control attribute keys.
+     * The branch attribute keys.
      */
-    public static final List<String> CTRL_KEYS = List.of(FOR_KEY, IF_KEY, ELSE_KEY, ELSE_IF_KEY);
+    public static final Set<String> BRANCH_KEYS = Set.of(IF_KEY, ELSE_KEY, ELSE_IF_KEY);
+
+    /**
+     * The control attribute keys.
+     */
+    public static final Set<String> CTRL_KEYS = Set.of(FOR_KEY, IF_KEY, ELSE_KEY, ELSE_IF_KEY);
 
     /**
      * The attribute key prefixes for expression attributes.
      */
-    public static final List<String> EXPR_KEYS = List.of(":", "@");
+    public static final Set<String> EXPR_KEYS = Set.of(":", "@");
 }
