@@ -28,7 +28,7 @@ import static com.acme.codegen.utils.Constants.IF_KEY;
 /**
  * {@link DomReader} implementation that generates template source code.
  */
-final class VDomGenerator implements DomReader {
+final class VNodeGenerator implements DomReader {
 
     private static final String V_ELT = "com.acme.api.vdom.VElement";
     private static final String V_COMP = "com.acme.api.vdom.VComponent";
@@ -46,7 +46,7 @@ final class VDomGenerator implements DomReader {
      * @param template   template
      * @param components components
      */
-    VDomGenerator(VNodeTemplate template, Map<String, TypeElement> components) {
+    VNodeGenerator(VNodeTemplate template, Map<String, TypeElement> components) {
         this.components = components;
         this.template = template;
         this.pos = template.startPosition();

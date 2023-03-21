@@ -59,7 +59,7 @@ record VNodeTemplate(MethodInvocationTree inv, Lookup lookup) {
      * @throws IOException if an IO error occurs
      */
     void apply(Map<String, TypeElement> components) throws IOException {
-        String code = new VDomGenerator(this, components).generate();
+        String code = new VNodeGenerator(this, components).generate();
         List<Tree> nodes = lookup.parse(inv, code);
         lookup.translate(inv, nodes);
     }

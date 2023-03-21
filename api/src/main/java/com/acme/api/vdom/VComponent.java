@@ -35,4 +35,6 @@ public final class VComponent implements VNodeSupplier {
     public VNode get() {
         return component.render();
     }
+
+    // TODO store event listeners
 }
